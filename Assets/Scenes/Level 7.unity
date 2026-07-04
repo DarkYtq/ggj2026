@@ -1599,6 +1599,8 @@ EdgeCollider2D:
   - {x: -1.2297409, y: 0.5440729}
   - {x: -1.5396483, y: 0.75064623}
   - {x: -1.7495661, y: 1.6024208}
+  - {x: -1.801415, y: 1.6770009}
+  - {x: -1.801415, y: 1.6770009}
   - {x: -1.7649508, y: 1.6648465}
   - {x: -1.2737708, y: 1.5391479}
   - {x: -1.175864, y: 2.2146568}
@@ -1608,13 +1610,19 @@ EdgeCollider2D:
   - {x: 1.7735714, y: 1.7037627}
   - {x: 1.5834868, y: 0.79365206}
   - {x: 1.5271158, y: 0.40318424}
-  - {x: 1.1491305, y: -0.06616193}
-  - {x: 0.8050449, y: -0.561012}
+  - {x: 1.3760645, y: -0.15977411}
+  - {x: 1.1011107, y: -0.38328588}
+  - {x: 0.985379, y: -0.56818396}
+  - {x: 0.9482012, y: -0.6585423}
   - {x: 0.88681436, y: -1.0557129}
-  - {x: 0.78794605, y: -1.4467367}
-  - {x: 0.78794605, y: -1.4467367}
-  - {x: 0.86346585, y: -1.4593235}
-  - {x: 0.85087925, y: -1.4593235}
+  - {x: 0.8584326, y: -1.3603907}
+  - {x: 0.87429214, y: -1.3868229}
+  - {x: 0.8810875, y: -1.4487506}
+  - {x: 0.89333886, y: -1.4593235}
+  - {x: 1.4032183, y: -1.367166}
+  - {x: 1.4409664, y: -1.8266497}
+  - {x: 1.2621175, y: -2.2345724}
+  - {x: 0.9512006, y: -2.3180542}
   - {x: 0.08236265, y: -2.2260153}
   - {x: -0.003651321, y: -2.3002481}
   m_AdjacentStartPoint: {x: 0, y: 0}
@@ -1784,11 +1792,11 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 4110730236861425736, guid: cf13491a603c8444bad277499dceff3d, type: 3}
       propertyPath: m_LocalPosition.x
-      value: -2.12
+      value: -1.93
       objectReference: {fileID: 0}
     - target: {fileID: 4110730236861425736, guid: cf13491a603c8444bad277499dceff3d, type: 3}
       propertyPath: m_LocalPosition.y
-      value: 1.44
+      value: 1.47
       objectReference: {fileID: 0}
     - target: {fileID: 4110730236861425736, guid: cf13491a603c8444bad277499dceff3d, type: 3}
       propertyPath: m_LocalPosition.z
@@ -2739,7 +2747,7 @@ PrefabInstance:
       objectReference: {fileID: 1602002}
     - target: {fileID: 5934092104501084895, guid: edccba1c76c8e1042818e4959658f089, type: 3}
       propertyPath: chainMax
-      value: 6.8
+      value: 6.65
       objectReference: {fileID: 0}
     - target: {fileID: 5934092104501084895, guid: edccba1c76c8e1042818e4959658f089, type: 3}
       propertyPath: trajLine
