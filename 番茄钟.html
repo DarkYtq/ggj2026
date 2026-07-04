@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>桌面挂机番茄钟</title>
+<style>
+  :root {
+    --work: #ff6b5e;
+    --short: #4fd1a0;
+    --long: #5aa9ff;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; -webkit-user-select: none; user-select: none; }
+  html, body { height: 100%; }
+  body {
+    font-family: -apple-system, "PingFang SC", "Microsoft YaHei", system-ui, sans-serif;
+    background: #0d1117;
+    color: #e6edf3;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+    overflow: hidden;
+    transition: background 1.2s ease;
+  }
+  body.work  { background: radial-gradient(circle at 50% 30%, #3a1a17, #0d1117 70%); }
+  body.short { background: radial-gradient(circle at 50% 30%, #12362b, #0d1117 70%); }
+  body.long  { background: radial-gradient(circle at 50% 30%, #14263f, #0d1117 70%); }
+
+  .app { text-align: center; width: 100%; max-width: 560px; padding: 24px; }
+
+  .modes { display: flex; gap: 8px; justify-content: center; margin-bottom: 40px; flex-wrap: wrap; }
+  .modes button {
+    background: rgba(255,255,255,0.06);
+    border: 1px solid rgba(255,255,255,0.1);
+    color: #e6edf3;
+    padding: 9px 18px;
+    border-radius: 999px;
+    font-size: 14px;
+    cursor: pointer;
+    transition: all .2s;
+  }
+  .modes button:hover { background: rgba(255,255,255,0.12); }
+  .modes button.active { color: #0d1117; font-weight: 600; border-color: transparent; }
+  .modes button.active[data-mode="work"]  { background: var(--work); }
+  .modes button.active[data-mode="short"] { background: var(--short); }
+  .modes button.active[data-mode="long"]  { background: var(--long); }
+
+  .ring-wrap { position: relative; width: 340px; height: 340px; margin: 0 auto; }
+  svg { transform: rotate(-90deg); width: 100%; height: 100%; }
+  .track { fill: none; stroke: rgba(255,255,255,0.07); stroke-width: 8; }
+  .prog  { fill: none; stroke-width: 8; stroke-linecap: round; transition: stroke-dashoffset 1s linear, stroke .6s; }
+
+  .center {
+    position: absolute; inset: 0;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+  }
+  .time { font-size: 82px; font-weight: 200; letter-spacing: 2px; font-variant-numeric: tabular-nums; }
+  .label { margin-top: 6px; font-size: 15px; letter-spacing: 3px; color: #8b949e; }
+
+  .controls { margin-top: 44px; display: flex; gap: 14px; justify-content: center; align-items: center; }
+  .btn {
+    border: none; cursor: pointer; color: #0d1117; font-weight: 600;
+    font-size: 17px; padding: 15px 44px; border-radius: 999px;
+    transition: transform .1s, filter .2s;
+  }
+  .btn:active { transform: scale(.96); }
+  .btn:hover { filter: brightness(1.08); }
+  .btn.primary { background: #e6edf3; }
+  .btn.ghost {
+    background: rgba(255,255,255,0.06); color: #e6edf3;
+    border: 1px solid rgba(255,255,255,0.14);
+    padding: 15px 22px;
+  }
+
+  .stats { margin-top: 30px; color: #8b949e; font-size: 14px; letter-spacing: 1px; }
+  .stats b { color: #e6edf3; font-weight: 600; }
+
+  .topbar { position: fixed; top: 18px; right: 20px; display: flex; gap: 10px; }
+  .icon-btn {
+    background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.12);
+    color: #e6edf3; width: 40px; height: 40px; border-radius: 10px;
+    cursor: pointer; font-size: 17px; transition: background .2s;
+  }
+  .icon-btn:hover { background: rgba(255,255,255,0.14); }
+
+  body.fs .time { font-size: 15vw; }
+  body.fs .ring-wrap { width: 46vh; height: 46vh; }
+</style>
+</head>
+<body class="work">
+  <div class="topbar">
+    <button class="icon-btn" id="soundBtn" title="提示音开关">🔔</button>
+    <button class="icon-btn" id="fsBtn" title="全屏">⛶</button>
+  </div>
+
+  <div class="app">
+    <div class="modes">
+      <button data-mode="work"  class="active">专注</button>
+      <button data-mode="short">短休息</button>
+      <button data-mode="long">长休息</button>
+    </div>
+
+    <div class="ring-wrap">
+      <svg viewBox="0 0 120 120">
+        <circle class="track" cx="60" cy="60" r="54"></circle>
+        <circle class="prog"  cx="60" cy="60" r="54"></circle>
+      </svg>
+      <div class="center">
+        <div class="time" id="time">25:00</div>
+        <div class="label" id="label">开始专注</div>
+      </div>
+    </div>
+
+    <div class="controls">
+      <button class="btn primary" id="startBtn">开始</button>
+      <button class="btn ghost" id="resetBtn">重置</button>
+      <button class="btn ghost" id="skipBtn">跳过</button>
+    </div>
+
+    <div class="stats">今日已完成 <b id="done">0</b> 个番茄 · 累计专注 <b id="focus">0</b> 分钟</div>
+  </div>
+
+<script>
+  const DUR = { work: 25*60, short: 5*60, long: 15*60 };
+  const LABELS = { work: '专注中', short: '短休息', long: '长休息' };
+  const COLORS = { work: '#ff6b5e', short: '#4fd1a0', long: '#5aa9ff' };
+  const R = 54, C = 2 * Math.PI * R;
+
+  let mode = 'work';
+  let remain = DUR[mode];
+  let running = false;
+  let timer = null;
+  let cycle = 0;        // 完成的专注数，用于决定长休息
+  let doneCount = 0;
+  let focusMin = 0;
+  let soundOn = true;
+
+  const $ = s => document.querySelector(s);
+  const timeEl = $('#time'), labelEl = $('#label'), progEl = $('.prog');
+  const startBtn = $('#startBtn'), doneEl = $('#done'), focusEl = $('#focus');
+
+  progEl.style.strokeDasharray = C;
+  progEl.style.stroke = COLORS[mode];
+
+  function fmt(s){ const m = Math.floor(s/60), ss = s%60; return String(m).padStart(2,'0')+':'+String(ss).padStart(2,'0'); }
+
+  function render(){
+    timeEl.textContent = fmt(remain);
+    const frac = remain / DUR[mode];
+    progEl.style.strokeDashoffset = C * (1 - frac);
+    progEl.style.stroke = COLORS[mode];
+    labelEl.textContent = running ? LABELS[mode] : (mode==='work'?'开始专注':'开始休息');
+    document.title = fmt(remain) + ' · ' + LABELS[mode];
+    document.body.className = mode + (document.fullscreenElement ? ' fs':'');
+    startBtn.textContent = running ? '暂停' : '开始';
+    doneEl.textContent = doneCount;
+    focusEl.textContent = focusMin;
+    $$mode();
+  }
+  function $$mode(){
+    document.querySelectorAll('.modes button').forEach(b=>{
+      b.classList.toggle('active', b.dataset.mode===mode);
+    });
+  }
+
+  function setMode(m){
+    mode = m; remain = DUR[m]; running = false;
+    clearInterval(timer); render();
+  }
+
+  function tick(){
+    remain--;
+    if (remain <= 0){ complete(); return; }
+    render();
+  }
+
+  function toggle(){
+    if (running){ running = false; clearInterval(timer); }
+    else { running = true; timer = setInterval(tick, 1000); }
+    render();
+  }
+
+  function complete(){
+    clearInterval(timer); running = false;
+    beep();
+    notify(mode==='work' ? '专注结束，休息一下 ☕' : '休息结束，继续专注 💪');
+    if (mode === 'work'){
+      doneCount++; cycle++; focusMin += DUR.work/60;
+      setMode(cycle % 4 === 0 ? 'long' : 'short');
+    } else {
+      setMode('work');
+    }
+    // 自动进入下一段
+    running = true; timer = setInterval(tick, 1000); render();
+  }
+
+  function reset(){ setMode(mode); }
+
+  // 提示音
+  let ac;
+  function beep(){
+    if (!soundOn) return;
+    try{
+      ac = ac || new (window.AudioContext||window.webkitAudioContext)();
+      [0, .2, .4].forEach(t=>{
+        const o = ac.createOscillator(), g = ac.createGain();
+        o.frequency.value = 880; o.type = 'sine';
+        o.connect(g); g.connect(ac.destination);
+        const st = ac.currentTime + t;
+        g.gain.setValueAtTime(0, st);
+        g.gain.linearRampToValueAtTime(.3, st+.02);
+        g.gain.exponentialRampToValueAtTime(.001, st+.15);
+        o.start(st); o.stop(st+.16);
+      });
+    }catch(e){}
+  }
+
+  function notify(msg){
+    if ('Notification' in window && Notification.permission === 'granted'){
+      new Notification('番茄钟', { body: msg });
+    }
+  }
+
+  // 事件绑定
+  startBtn.onclick = toggle;
+  $('#resetBtn').onclick = reset;
+  $('#skipBtn').onclick = complete;
+  document.querySelectorAll('.modes button').forEach(b=>{
+    b.onclick = ()=> setMode(b.dataset.mode);
+  });
+  $('#fsBtn').onclick = ()=>{
+    if (document.fullscreenElement) document.exitFullscreen();
+    else document.documentElement.requestFullscreen();
+  };
+  document.addEventListener('fullscreenchange', render);
+  $('#soundBtn').onclick = (e)=>{
+    soundOn = !soundOn;
+    e.target.textContent = soundOn ? '🔔' : '🔕';
+  };
+  // 空格键 开始/暂停
+  document.addEventListener('keydown', e=>{
+    if (e.code === 'Space'){ e.preventDefault(); toggle(); }
+  });
+
+  if ('Notification' in window && Notification.permission === 'default'){
+    Notification.requestPermission();
+  }
+
+  render();
+</script>
+</body>
+</html>
