@@ -15,8 +15,20 @@ using Debug = UnityEngine.Debug;
 public static class BuildDesktopPet
 {
     private const string ScenePath = "Assets/Scenes/CatWidget.unity";      // 开机场景（桌面宠物）
-    private const string LevelScene = "Assets/Scenes/SampleScene.unity";   // 双击进入的关卡
-    private static readonly string[] Scenes = { ScenePath, LevelScene };
+    // 双击进入后的关卡场景，顺序即过关顺序（Win 时按 build 序号 +1 推进）
+    private static readonly string[] LevelScenes =
+    {
+        "Assets/Scenes/Level 1.unity",
+        "Assets/Scenes/Level 2.unity",
+        "Assets/Scenes/Level 3.unity",
+    };
+    private static readonly string[] Scenes =
+    {
+        ScenePath,
+        "Assets/Scenes/Level 1.unity",
+        "Assets/Scenes/Level 2.unity",
+        "Assets/Scenes/Level 3.unity",
+    };
     private const string OutRoot = "Builds";
 
     [MenuItem("Build/Desktop Pet - Windows x64")]
@@ -145,14 +157,14 @@ public static class BuildDesktopPet
 
     private static void EnsureSceneInBuild()
     {
-        var scenes = new System.Collections.Generic.List<EditorBuildSettingsScene>(EditorBuildSettings.scenes);
-        // SampleScene 先确保在列表里（在后）
-        if (!scenes.Exists(s => s.path == LevelScene))
-            scenes.Add(new EditorBuildSettingsScene(LevelScene, true));
-        // CatWidget 必须是第 0 个（开机进桌面宠物）
-        scenes.RemoveAll(s => s.path == ScenePath);
-        scenes.Insert(0, new EditorBuildSettingsScene(ScenePath, true));
-        EditorBuildSettings.scenes = scenes.ToArray();
+        // 直接把构建列表设为：CatWidget(0) + 各关卡，顺序 = 过关顺序
+        var list = new System.Collections.Generic.List<EditorBuildSettingsScene>
+        {
+            new EditorBuildSettingsScene(ScenePath, true)
+        };
+        foreach (var lv in LevelScenes)
+            list.Add(new EditorBuildSettingsScene(lv, true));
+        EditorBuildSettings.scenes = list.ToArray();
     }
 
     private static void Run(BuildTarget target, string outputPath)

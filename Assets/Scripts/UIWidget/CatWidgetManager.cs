@@ -20,15 +20,15 @@ public class CatWidgetManager : MonoBehaviour
 
     [Header("关卡")]
     [Tooltip("双击小猫后加载的关卡场景名（需加入 Build Settings）")]
-    public string levelSceneName = "SampleScene";
+    public string levelSceneName = "Level 1";
     public float fadeTime = 0.5f;
 
     [Header("交互")]
     public float doubleClickTime = 0.25f;
     [Tooltip("小猫身上的 Animator（留空则自动从 cat 上获取）")]
     public Animator catAnimator;
-    [Tooltip("单击小猫时触发的 Animator Trigger 名")]
-    public string touchTrigger = "touch";
+    [Tooltip("在别处点击时触发的 Animator Trigger 名（须与 cat.controller 里的参数完全一致，区分大小写）")]
+    public string touchTrigger = "Touch";
 
     [Header("信件文本池（数量建议 ≥ 上限 n，保证 n 封内不重复）")]
     [TextArea]

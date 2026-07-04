@@ -45,8 +45,11 @@ public class DesktopPet : MonoBehaviour
         _es = EventSystem.current;
         _ped = new PointerEventData(_es);
 
+        // 桌宠失焦（点到别的软件）时 Unity 仍需运行，否则收不到“别处的点击”
+        Application.runInBackground = true;
+
         if (petManager == null) petManager = FindObjectOfType<CatWidgetManager>();
-        _prevMouseDown = TransparentWindow.IsPrimaryMouseDown();   // 避免启动瞬间误触发
+        _prevMouseDown = TransparentWindow.IsAnyMouseDown();   // 避免启动瞬间误触发
 
 #if !UNITY_EDITOR
         StartCoroutine(SetupWindow());
@@ -78,9 +81,9 @@ public class DesktopPet : MonoBehaviour
         if (_es == null) { _es = EventSystem.current; if (_es == null) return; }
         if (_ped == null) _ped = new PointerEventData(_es);
 
-        // —— 全局鼠标点击：在“别处”（不在小猫/本组件可交互区域）按下左键时，播放小猫 touch 动画 ——
-        // 用全局左键状态检测“按下”的上升沿；点在小猫/信箱等可交互 UI 上则不触发（点猫只冒爱心）。
-        bool mouseDown = TransparentWindow.IsPrimaryMouseDown();
+        // —— 全局鼠标点击：在“别处”（不在小猫/本组件可交互区域）按下左键或右键时，播放小猫 touch 动画 ——
+        // 用全局左/右键状态检测“按下”的上升沿；点在小猫/信箱等可交互 UI 上则不触发（点猫只冒爱心）。
+        bool mouseDown = TransparentWindow.IsAnyMouseDown();
         if (mouseDown && !_prevMouseDown && !DragActive)
         {
             bool overSelf;

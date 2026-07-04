@@ -24,6 +24,7 @@ public static class TransparentWindow
     [DllImport("user32.dll")] private static extern short GetAsyncKeyState(int vKey);
     [DllImport("dwmapi.dll")] private static extern int DwmExtendFrameIntoClientArea(IntPtr hWnd, ref MARGINS m);
     private const int VK_LBUTTON = 0x01;
+    private const int VK_RBUTTON = 0x02;
 
     private const int GWL_STYLE = -16, GWL_EXSTYLE = -20;
     private const uint WS_POPUP = 0x80000000, WS_VISIBLE = 0x10000000;
@@ -120,6 +121,25 @@ public static class TransparentWindow
         return Input.GetMouseButton(0);
 #else
         return Input.GetMouseButton(0);
+#endif
+    }
+
+    /// <summary>全局左键或右键是否按下（不依赖窗口焦点）。用于“在别处点击”触发桌宠反应。</summary>
+    public static bool IsAnyMouseDown()
+    {
+#if UNITY_STANDALONE_WIN && !UNITY_EDITOR
+        return (GetAsyncKeyState(VK_LBUTTON) & 0x8000) != 0
+            || (GetAsyncKeyState(VK_RBUTTON) & 0x8000) != 0;
+#elif UNITY_STANDALONE_OSX && !UNITY_EDITOR
+        if (_native)
+        {
+            try { return (_PressedMouseButtons() & 3) != 0; }   // bit0=左 bit1=右
+            catch (DllNotFoundException) { MacFail(); }
+            catch (EntryPointNotFoundException) { MacFail(); }
+        }
+        return Input.GetMouseButton(0) || Input.GetMouseButton(1);
+#else
+        return Input.GetMouseButton(0) || Input.GetMouseButton(1);
 #endif
     }
 

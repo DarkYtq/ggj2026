@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 
 /// <summary>
 /// 船锚链条玩法（移植自 HTML 演示的自定义物理，不走 Unity 物理引擎）。
@@ -41,6 +42,13 @@ public class AnchorChain : MonoBehaviour
     [Header("障碍识别")]
     public LayerMask obstacleMask = ~0;
 
+    [Header("过关（钩住目标并保持静止即胜利，自动切下一关场景）")]
+    public bool advanceOnWin = true;
+    public float winHoldTime = 1.5f;
+    public float winStillSpeed = 0.25f;
+    [Tooltip("过完最后一关后回到的 Build 场景序号（默认 1 = 第一关；0 通常是桌宠）")]
+    public int loopToBuildIndex = 1;
+
     [Header("外观")]
     public Color chainColor = new Color(0.6f, 0.67f, 0.73f);
     public Color anchorColor = new Color(0.24f, 0.30f, 0.38f);
@@ -60,6 +68,8 @@ public class AnchorChain : MonoBehaviour
     bool _chainCut;
     int _settleFrames;
     LevelTarget _target;           // ← 加这行
+    float _winTimer;
+    bool _won;
     public Vector2 AnchorVelocity => _vel;
 
     class Obs { public Collider2D col; public ChainObstacle.Kind kind; public Vector2 dir; }
@@ -152,7 +162,34 @@ public class AnchorChain : MonoBehaviour
 
         if (_phase == Phase.Flying) StepFrame();
 
+        CheckWin();
         Draw();
+    }
+
+    // 钩住目标并保持静止 winHoldTime 秒 → 过关，加载下一关场景
+    void CheckWin()
+    {
+        if (!advanceOnWin || _won || _target == null) return;
+        if (!_target.IsHooked) { _winTimer = 0f; return; }
+
+        if (_vel.magnitude < winStillSpeed)
+        {
+            _winTimer += Time.deltaTime;
+            if (_winTimer >= winHoldTime) Win();
+        }
+        else _winTimer = 0f;
+    }
+
+    void Win()
+    {
+        _won = true;
+        Debug.Log("[AnchorChain] 🎉 过关！");
+        int count = SceneManager.sceneCountInBuildSettings;
+        int idx = SceneManager.GetActiveScene().buildIndex;
+        if (idx < 0 || count <= 0) return;          // 场景没进 Build Settings，无法切换
+        int next = idx + 1;
+        if (next >= count) next = Mathf.Clamp(loopToBuildIndex, 0, count - 1);
+        SceneManager.LoadScene(next);
     }
 
     void ReleaseAim()
@@ -184,6 +221,7 @@ public class AnchorChain : MonoBehaviour
         _maxLen = false;
         _chainCut = false;
         _settleFrames = 0;
+        _winTimer = 0f;
         // 目标重置（关卡重开时）
         if (_target != null) _target.ResetTarget();
     }
@@ -192,6 +230,7 @@ public class AnchorChain : MonoBehaviour
     public void ForceReset()
     {
         _phase = Phase.Idle;
+        _won = false;
         ClearShot();
         if (anchorRenderer != null) anchorRenderer.gameObject.SetActive(false);
         if (chainLine != null) chainLine.positionCount = 0;
@@ -484,19 +523,36 @@ public class AnchorChain : MonoBehaviour
 
     void OnGUI()
     {
-        if (_phase != Phase.Aiming) return;
-        Vector2 pull = _aimStart - _aimMouse;
-        float mag = Mathf.Min(maxPull, pull.magnitude);
-        float ratio = Mathf.Clamp01(mag * launchSpeedPerUnit / launchMaxSpeed);
-
-        float x = 20, y = Screen.height - 40, w = 180, h = 16;
         var prev = GUI.color;
-        GUI.color = new Color(0, 0, 0, 0.55f);
-        GUI.DrawTexture(new Rect(x, y, w, h), Texture2D.whiteTexture);
-        GUI.color = Color.HSVToRGB((1f - ratio) * 0.33f, 0.9f, 0.95f);
-        GUI.DrawTexture(new Rect(x, y, w * ratio, h), Texture2D.whiteTexture);
-        GUI.color = Color.white;
-        GUI.Label(new Rect(x, y - 20, 120, 20), "力度 " + Mathf.RoundToInt(ratio * 100) + "%");
+
+        // 过关倒计时条（钩住目标、保持静止累积中）
+        if (advanceOnWin && !_won && _target != null && _target.IsHooked && _winTimer > 0f)
+        {
+            float p = Mathf.Clamp01(_winTimer / winHoldTime);
+            float w = 220f, h = 18f, x = Screen.width * 0.5f - w * 0.5f, y = 28f;
+            GUI.color = new Color(0, 0, 0, 0.55f);
+            GUI.DrawTexture(new Rect(x - 2, y - 2, w + 4, h + 4), Texture2D.whiteTexture);
+            GUI.color = Color.Lerp(new Color(0.3f, 1f, 0.45f), Color.white, p);
+            GUI.DrawTexture(new Rect(x, y, w * p, h), Texture2D.whiteTexture);
+            GUI.color = Color.white;
+            GUI.Label(new Rect(x, y - 22, w, 20), $"🎯 保持住！{Mathf.CeilToInt(winHoldTime - _winTimer)} 秒后过关");
+        }
+
+        // 瞄准力度条
+        if (_phase == Phase.Aiming)
+        {
+            Vector2 pull = _aimStart - _aimMouse;
+            float mag = Mathf.Min(maxPull, pull.magnitude);
+            float ratio = Mathf.Clamp01(mag * launchSpeedPerUnit / launchMaxSpeed);
+            float x = 20, y = Screen.height - 40, w = 180, h = 16;
+            GUI.color = new Color(0, 0, 0, 0.55f);
+            GUI.DrawTexture(new Rect(x, y, w, h), Texture2D.whiteTexture);
+            GUI.color = Color.HSVToRGB((1f - ratio) * 0.33f, 0.9f, 0.95f);
+            GUI.DrawTexture(new Rect(x, y, w * ratio, h), Texture2D.whiteTexture);
+            GUI.color = Color.white;
+            GUI.Label(new Rect(x, y - 20, 120, 20), "力度 " + Mathf.RoundToInt(ratio * 100) + "%");
+        }
+
         GUI.color = prev;
     }
 }
