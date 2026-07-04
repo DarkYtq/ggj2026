@@ -1,6 +1,6 @@
 %YAML 1.1
 %TAG !u! tag:unity3d.com,2011:
---- !u!1 &8953681487819121858
+--- !u!1 &1098259963895166204
 GameObject:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -8,39 +8,39 @@ GameObject:
   m_PrefabAsset: {fileID: 0}
   serializedVersion: 6
   m_Component:
-  - component: {fileID: 7570889504588095972}
-  - component: {fileID: 1218618737020900515}
-  - component: {fileID: 588445756761112428}
-  - component: {fileID: 1611165693157670349}
+  - component: {fileID: 5381205172876793703}
+  - component: {fileID: 7629303232132859338}
+  - component: {fileID: 1008876766894609755}
+  - component: {fileID: 7836168601988504347}
   m_Layer: 0
-  m_Name: Launcher_Demo
+  m_Name: Crate
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!4 &7570889504588095972
+--- !u!4 &5381205172876793703
 Transform:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 8953681487819121858}
+  m_GameObject: {fileID: 1098259963895166204}
   serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 4, y: -2.2, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
+  m_LocalRotation: {x: -0, y: -0, z: -0.256498, w: 0.9665448}
+  m_LocalPosition: {x: 2.45, y: -1.76, z: 0}
+  m_LocalScale: {x: 1.03, y: 1.5510106, z: 0.7030236}
+  m_ConstrainProportionsScale: 1
   m_Children: []
   m_Father: {fileID: 0}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!212 &1218618737020900515
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: -29.725}
+--- !u!212 &7629303232132859338
 SpriteRenderer:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 8953681487819121858}
+  m_GameObject: {fileID: 1098259963895166204}
   m_Enabled: 1
   m_CastShadows: 0
   m_ReceiveShadows: 0
@@ -74,9 +74,9 @@ SpriteRenderer:
   m_LightmapParameters: {fileID: 0}
   m_SortingLayerID: 0
   m_SortingLayer: 0
-  m_SortingOrder: 3
-  m_Sprite: {fileID: 21300000, guid: c0000000000000000000000000000005, type: 3}
-  m_Color: {r: 0.29, g: 0.62, b: 0.87, a: 1}
+  m_SortingOrder: 5
+  m_Sprite: {fileID: 21300000, guid: e4e4e4e4e4e4e4e4e4e4e4e4e4e4e4e4, type: 3}
+  m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_FlipX: 0
   m_FlipY: 0
   m_DrawMode: 0
@@ -86,13 +86,13 @@ SpriteRenderer:
   m_WasSpriteAssigned: 1
   m_MaskInteraction: 0
   m_SpriteSortPoint: 0
---- !u!61 &588445756761112428
+--- !u!61 &1008876766894609755
 BoxCollider2D:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 8953681487819121858}
+  m_GameObject: {fileID: 1098259963895166204}
   m_Enabled: 1
   m_Density: 1
   m_Material: {fileID: 0}
@@ -131,17 +131,20 @@ BoxCollider2D:
   serializedVersion: 2
   m_Size: {x: 1, y: 1}
   m_EdgeRadius: 0
---- !u!114 &1611165693157670349
+--- !u!114 &7836168601988504347
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 8953681487819121858}
+  m_GameObject: {fileID: 1098259963895166204}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: d2d2d2d2d2d2d2d2d2d2d2d2d2d2d2d2, type: 3}
+  m_Script: {fileID: 11500000, guid: c5c5c5c5c5c5c5c5c5c5c5c5c5c5c5c5, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  kind: 2
-  launchDir: {x: -0.5, y: 1}
+  fragmentCount: 10
+  burstSpeed: 5
+  fragmentGravity: 1.5
+  fragmentLife: 1.5
+  fragmentScale: {x: 0.15, y: 0.32}
