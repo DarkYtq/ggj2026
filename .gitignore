@@ -4,3 +4,7 @@
 /Temp
 /Builds
 ProjectSettings/ProjectVersion.txt
+Assembly-CSharp-Editor.csproj
+Assembly-CSharp.csproj
+ggj2026.sln
+/ggj2026_BurstDebugInformation_DoNotShip
