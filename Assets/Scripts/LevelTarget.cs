@@ -23,12 +23,14 @@ public class LevelTarget : MonoBehaviour
 
     private int _wpIdx = 0;
     private SpriteRenderer _sr;
+    private Color _origColor;  // ← 新增
+
 
     // ================================================================
     void Awake()
     {
         _sr = GetComponent<SpriteRenderer>();
-        if (_sr != null) _sr.color = normalColor;
+        if (_sr != null) _origColor = _sr.color;  // 记录编辑器里设置的原始颜色
 
         if (waypoints != null && waypoints.Count > 0)
             transform.position = new Vector3(
@@ -67,6 +69,11 @@ public class LevelTarget : MonoBehaviour
         Debug.Log("[LevelTarget] 被锚钩住！");
     }
 
+    public void Unhook()
+    {
+        IsHooked = false;
+        if (_sr != null) _sr.color = _origColor;
+    }
     public void ResetTarget()
     {
         IsHooked = false;
@@ -74,7 +81,7 @@ public class LevelTarget : MonoBehaviour
         if (waypoints != null && waypoints.Count > 0)
             transform.position = new Vector3(
                 waypoints[0].x, waypoints[0].y, transform.position.z);
-        if (_sr != null) _sr.color = normalColor;
+        if (_sr != null) _sr.color = _origColor;
     }
 
     // ── Gizmos：路径可视化 ────────────────────────────────────

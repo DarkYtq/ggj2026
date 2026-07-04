@@ -29,7 +29,7 @@ public class AnchorChain : MonoBehaviour
     public float chainMax = 10f;
     public float launchMaxSpeed = 26f;
     public float bounceSpeed = 18f;
-    public float anchorRadius = 0.22f;
+    public float anchorRadius = 0.11f;
     [Tooltip("命中目标的额外容差半径（越大越好钩中）")]
     public float hookRadius = 0.2f;
     [Range(1, 8)] public int substeps = 4;
@@ -175,15 +175,32 @@ public class AnchorChain : MonoBehaviour
     // 钩住目标并保持静止 winHoldTime 秒 → 过关，加载下一关场景
     void CheckWin()
     {
-        if (!advanceOnWin || _won || _target == null) return;
+        if (!advanceOnWin || _won || _target == null || _targetCol == null) return;
         if (!_target.IsHooked) { _winTimer = 0f; return; }
 
-        if (_vel.magnitude < winStillSpeed)
+        // 用真实碰撞体形状判断锚头是否还在目标附近（和 Substep 里的 touching 逻辑保持一致）
+        float pad = anchorRadius + hookRadius;
+        bool stillNear = Vector2.Distance(_pos, _targetCol.ClosestPoint(_pos)) < pad;
+
+        if (!stillNear)
         {
-            _winTimer += Time.deltaTime;
-            if (_winTimer >= winHoldTime) Win();
+            _winTimer = 0f;
+            _target.Unhook();
+            return;
         }
-        else _winTimer = 0f;
+
+        _winTimer += Time.deltaTime;
+        if (_winTimer >= winHoldTime) Win();
+
+        // 速度超过阈值 → 重置计时器，等静止后再开始倒计时
+        if (_vel.magnitude > winStillSpeed)
+        {
+            _winTimer = 0f;
+            return;
+        }
+
+        _winTimer += Time.deltaTime;
+        if (_winTimer >= winHoldTime) Win();
     }
 
     void Win()
@@ -274,13 +291,12 @@ public class AnchorChain : MonoBehaviour
 
     void Substep(float dt)
     {
+        
         // 0. 已钩住目标：把锚头钉在目标上、速度归零，跳过后续物理
         //    （目标被钩住后自身也停止移动，这样锚头保持静止，胜利倒计时才能累积）
         if (_target != null && _target.IsHooked)
         {
-            _pos = _target.Position;
-            _vel = Vector2.zero;
-            return;
+         
         }
 
         Vector2 startPos = _pos;   // 记录本子步起点，用于扫掠命中检测（防高速隧穿）
@@ -326,8 +342,7 @@ public class AnchorChain : MonoBehaviour
         {
             var o = _obs[i];
             if (o.col == null) continue;
-            if (!CircleRect(_pos, anchorRadius, o.col.bounds, out Vector2 n, out float dep)) continue;
-
+            if (!GetCircleColliderOverlap(_pos, anchorRadius, o.col, out Vector2 n, out float dep)) continue;
             _pos += n * dep;
 
             if (o.kind == ChainObstacle.Kind.Launcher)
@@ -354,17 +369,26 @@ public class AnchorChain : MonoBehaviour
             }
         }
 
-        // 命中目标：扫掠检测 —— 把目标包围盒外扩(锚半径+容差)，再用本子步移动线段做相交，
-        // 这样即使锚头飞得快、两个采样点之间跨过目标，也能可靠判定为钩住（不再看角度/速度）。
+        /// 命中目标：扫掠检测 —— 把目标包围盒外扩(锚半径+容差)，再用本子步移动线段做相交，
+        /// 这样即使锚头飞得快、两个采样点之间跨过目标，也能可靠判定为钩住（不再看角度/速度）。
         if (_target != null && !_target.IsHooked && _targetCol != null)
         {
-            Bounds eb = _targetCol.bounds;
             float pad = anchorRadius + hookRadius;
-            eb.Expand(new Vector3(pad * 2f, pad * 2f, 0f));
-            if (SegRect(startPos, _pos, eb, out _, out _))
+
+            bool swept = false;
+            Vector2 sweepDir = _pos - startPos;
+            float sweepLen = sweepDir.magnitude;
+            if (sweepLen > 1e-6f)
             {
-                _pos = _target.Position;   // 贴到目标中心并钉住
-                _vel = Vector2.zero;
+                int sc = Physics2D.RaycastNonAlloc(startPos, sweepDir / sweepLen, _rayBuf, sweepLen);
+                for (int ri = 0; ri < sc; ri++)
+                    if (_rayBuf[ri].collider == _targetCol) { swept = true; break; }
+            }
+
+            bool touching = Vector2.Distance(_pos, _targetCol.ClosestPoint(_pos)) < pad;
+
+            if (swept || touching)
+            {
                 _target.Hook();
             }
         }
@@ -380,7 +404,7 @@ public class AnchorChain : MonoBehaviour
         {
             var o = _obs[i];
             if (o.col == null || o.kind == ChainObstacle.Kind.Cutter) continue;
-            if (SegRect(ln, _pos, o.col.bounds, out float t, out Vector2 pt) && t > 0.01f && t < bestT)
+            if (SegCollider(ln, _pos, o.col, out float t, out Vector2 pt) && t > 0.01f && t < bestT)
             {
                 bestT = t; bestPt = pt; found = true;
             }
@@ -398,7 +422,7 @@ public class AnchorChain : MonoBehaviour
             {
                 Vector2 A = _nodes[s];
                 Vector2 B = (s == _nodes.Count - 1) ? _pos : _nodes[s + 1];
-                if (SegRect(A, B, o.col.bounds, out float t, out Vector2 pt) && t > 0.01f)
+                if (SegCollider(A, B, o.col, out float t, out Vector2 pt) && t > 0.01f)
                 {
                     if (s > 0) _nodes.RemoveRange(0, s);
                     _nodes[0] = pt;
@@ -449,6 +473,67 @@ public class AnchorChain : MonoBehaviour
         if (t1 > tE) tE = t1;
         if (t2 < tL) tL = t2;
         return tE <= tL + 1e-9f;
+    }
+
+    static bool GetCircleColliderOverlap(Vector2 center, float radius, Collider2D col,
+                                         out Vector2 normal, out float depth)
+    {
+        normal = Vector2.zero;
+        depth = 0f;
+
+        Vector2 closest = col.ClosestPoint(center);
+        Vector2 diff = center - closest;
+        float dist = diff.magnitude;
+
+        if (dist < 1e-6f)
+        {
+            Bounds b = col.bounds;
+            float[] ds = { center.x - b.min.x, b.max.x - center.x,
+                            center.y - b.min.y, b.max.y - center.y };
+            Vector2[] ns = { Vector2.left, Vector2.right, Vector2.down, Vector2.up };
+            int mi = 0;
+            for (int i = 1; i < 4; i++) if (ds[i] < ds[mi]) mi = i;
+            normal = ns[mi];
+            depth = ds[mi] + radius;
+            return true;
+        }
+
+        if (dist >= radius) return false;
+
+        normal = diff / dist;
+        depth = radius - dist;
+        return true;
+    }
+
+    static readonly RaycastHit2D[] _rayBuf = new RaycastHit2D[16];
+
+    static bool SegCollider(Vector2 a, Vector2 b, Collider2D col,
+                            out float t, out Vector2 hit)
+    {
+        t = 0f;
+        hit = Vector2.zero;
+        Vector2 dir = b - a;
+        float len = dir.magnitude;
+        if (len < 1e-6f) return false;
+
+        int cnt = Physics2D.RaycastNonAlloc(a, dir / len, _rayBuf, len);
+        float bestT = float.MaxValue;
+        bool found = false;
+
+        for (int i = 0; i < cnt; i++)
+        {
+            if (_rayBuf[i].collider != col) continue;
+            if (_rayBuf[i].fraction < 0.01f) continue;
+            if (_rayBuf[i].fraction < bestT)
+            {
+                bestT = _rayBuf[i].fraction;
+                hit = _rayBuf[i].point;
+                found = true;
+            }
+        }
+
+        if (found) { t = bestT; return true; }
+        return false;
     }
 
     // ================= 绘制 =================
@@ -508,7 +593,7 @@ public class AnchorChain : MonoBehaviour
             if (Vector2.Distance(p, O) > chainMax) break;
             bool hit = false;
             for (int k = 0; k < _obs.Count; k++)
-                if (_obs[k].col != null && CircleRect(p, anchorRadius, _obs[k].col.bounds, out _, out _)) { hit = true; break; }
+                if (_obs[k].col != null && GetCircleColliderOverlap(p, anchorRadius, _obs[k].col, out _, out _)) { hit = true; break; }
             if (hit) break;
             pts.Add(p);
         }
@@ -566,4 +651,6 @@ public class AnchorChain : MonoBehaviour
 
         GUI.color = prev;
     }
+
+
 }

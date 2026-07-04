@@ -145,7 +145,7 @@ MonoBehaviour:
   hammerRadius: 0.25
   sideLimit: 7.4
   topLimit: 4.3
-  previewSeconds: 1
+  previewSeconds: 0.5
   stepTime: 0.03
   maxFlightTime: 4
   weakColor: {r: 0.6, g: 0.9, b: 1, a: 1}
@@ -169,10 +169,11 @@ MonoBehaviour:
   anchorRenderer: {fileID: 0}
   gravity: 18
   dragPerSecond: 0.97
-  chainMax: 6
+  chainMax: 6.5
   launchMaxSpeed: 26
   bounceSpeed: 18
   anchorRadius: 0.22
+  hookRadius: 0.2
   substeps: 4
   settleSpeed: 0.15
   grabRadius: 1.8
