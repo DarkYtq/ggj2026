@@ -1,6 +1,6 @@
 %YAML 1.1
 %TAG !u! tag:unity3d.com,2011:
---- !u!1 &1606195604944228037
+--- !u!1 &5914713520271048961
 GameObject:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -8,39 +8,39 @@ GameObject:
   m_PrefabAsset: {fileID: 0}
   serializedVersion: 6
   m_Component:
-  - component: {fileID: 4831430292739613108}
-  - component: {fileID: 1662840723384771666}
-  - component: {fileID: 5570679849404337170}
-  - component: {fileID: 7418207470887446876}
+  - component: {fileID: 4095007138572577134}
+  - component: {fileID: 3451853587075711672}
+  - component: {fileID: 7033418110534969349}
+  - component: {fileID: 6294644681951728173}
   m_Layer: 0
-  m_Name: Cutter_Demo
+  m_Name: TargetObject
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!4 &4831430292739613108
+--- !u!4 &4095007138572577134
 Transform:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1606195604944228037}
+  m_GameObject: {fileID: 5914713520271048961}
   serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0.5, y: -0.6, z: 0}
-  m_LocalScale: {x: 0.4, y: 3.2, z: 1}
+  m_LocalRotation: {x: -0, y: -0, z: -0.256498, w: 0.9665448}
+  m_LocalPosition: {x: -1.46, y: 0.88, z: 0}
+  m_LocalScale: {x: 1.4651, y: 2.2062, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 0}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!212 &1662840723384771666
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: -29.725}
+--- !u!212 &3451853587075711672
 SpriteRenderer:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1606195604944228037}
+  m_GameObject: {fileID: 5914713520271048961}
   m_Enabled: 1
   m_CastShadows: 0
   m_ReceiveShadows: 0
@@ -74,9 +74,9 @@ SpriteRenderer:
   m_LightmapParameters: {fileID: 0}
   m_SortingLayerID: 0
   m_SortingLayer: 0
-  m_SortingOrder: 3
-  m_Sprite: {fileID: 21300000, guid: c0000000000000000000000000000005, type: 3}
-  m_Color: {r: 0.88, g: 0.31, b: 0.31, a: 1}
+  m_SortingOrder: 5
+  m_Sprite: {fileID: 21300000, guid: e4e4e4e4e4e4e4e4e4e4e4e4e4e4e4e4, type: 3}
+  m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_FlipX: 0
   m_FlipY: 0
   m_DrawMode: 0
@@ -86,13 +86,13 @@ SpriteRenderer:
   m_WasSpriteAssigned: 1
   m_MaskInteraction: 0
   m_SpriteSortPoint: 0
---- !u!61 &5570679849404337170
-BoxCollider2D:
+--- !u!60 &7033418110534969349
+PolygonCollider2D:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1606195604944228037}
+  m_GameObject: {fileID: 5914713520271048961}
   m_Enabled: 1
   m_Density: 1
   m_Material: {fileID: 0}
@@ -128,20 +128,38 @@ BoxCollider2D:
     drawMode: 0
     adaptiveTiling: 0
   m_AutoTiling: 0
-  serializedVersion: 2
-  m_Size: {x: 1, y: 1}
-  m_EdgeRadius: 0
---- !u!114 &7418207470887446876
+  m_Points:
+    m_Paths:
+    - - {x: -0.16963881, y: 0.38759056}
+      - {x: -0.28198498, y: 0.29799387}
+      - {x: -0.30182818, y: 0.037834216}
+      - {x: -0.25798362, y: -0.107598916}
+      - {x: -0.26303402, y: -0.19430938}
+      - {x: -0.2720006, y: -0.2157439}
+      - {x: -0.25059372, y: -0.3430831}
+      - {x: -0.16927902, y: -0.3951144}
+      - {x: -0.1318722, y: -0.40829352}
+      - {x: 0.28937793, y: -0.36707106}
+      - {x: 0.32940662, y: -0.2840877}
+      - {x: 0.37773323, y: 0.2833943}
+      - {x: 0.37104976, y: 0.36379886}
+      - {x: 0.2932971, y: 0.3948556}
+  m_UseDelaunayMesh: 0
+--- !u!114 &6294644681951728173
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1606195604944228037}
+  m_GameObject: {fileID: 5914713520271048961}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: d2d2d2d2d2d2d2d2d2d2d2d2d2d2d2d2, type: 3}
+  m_Script: {fileID: 11500000, guid: f675086ca0be1124f9772d18d5df40e8, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  kind: 1
-  launchDir: {x: 0, y: 1}
+  waypoints:
+  - {x: -1, y: 1}
+  - {x: -2, y: 2}
+  moveSpeed: 0.5
+  normalColor: {r: 1, g: 0.85, b: 0.1, a: 1}
+  hookedColor: {r: 0.3, g: 1, b: 0.45, a: 1}
