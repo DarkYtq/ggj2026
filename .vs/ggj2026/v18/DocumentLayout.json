@@ -1,0 +1,87 @@
+{
+  "Version": 1,
+  "WorkspaceRootPath": "C:\\Users\\15929\\OneDrive\\\u6587\u6863\\GitHub\\ggj2026\\",
+  "Documents": [
+    {
+      "AbsoluteMoniker": "D:0:0:{2C54274E-B882-18AF-46BF-876A4A202BDD}|Assembly-CSharp.csproj|C:\\Users\\15929\\OneDrive\\\u6587\u6863\\GitHub\\ggj2026\\assets\\scripts\\anchorchain.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{2C54274E-B882-18AF-46BF-876A4A202BDD}|Assembly-CSharp.csproj|solutionrelative:assets\\scripts\\anchorchain.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{2C54274E-B882-18AF-46BF-876A4A202BDD}|Assembly-CSharp.csproj|c:\\users\\15929\\onedrive\\\u6587\u6863\\github\\ggj2026\\assets\\scripts\\levelmanager.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{2C54274E-B882-18AF-46BF-876A4A202BDD}|Assembly-CSharp.csproj|solutionrelative:assets\\scripts\\levelmanager.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{2C54274E-B882-18AF-46BF-876A4A202BDD}|Assembly-CSharp.csproj|c:\\users\\15929\\onedrive\\\u6587\u6863\\github\\ggj2026\\assets\\scripts\\victorymanager.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{2C54274E-B882-18AF-46BF-876A4A202BDD}|Assembly-CSharp.csproj|solutionrelative:assets\\scripts\\victorymanager.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{2C54274E-B882-18AF-46BF-876A4A202BDD}|Assembly-CSharp.csproj|C:\\Users\\15929\\OneDrive\\\u6587\u6863\\GitHub\\ggj2026\\assets\\scripts\\leveltarget.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{2C54274E-B882-18AF-46BF-876A4A202BDD}|Assembly-CSharp.csproj|solutionrelative:assets\\scripts\\leveltarget.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    }
+  ],
+  "DocumentGroupContainers": [
+    {
+      "Orientation": 0,
+      "VerticalTabListWidth": 256,
+      "DocumentGroups": [
+        {
+          "DockedWidth": 200,
+          "SelectedChildIndex": 3,
+          "Children": [
+            {
+              "$type": "Document",
+              "DocumentIndex": 1,
+              "Title": "LevelManager.cs",
+              "DocumentMoniker": "C:\\Users\\15929\\OneDrive\\\u6587\u6863\\GitHub\\ggj2026\\Assets\\Scripts\\LevelManager.cs",
+              "RelativeDocumentMoniker": "Assets\\Scripts\\LevelManager.cs",
+              "ToolTip": "C:\\Users\\15929\\OneDrive\\\u6587\u6863\\GitHub\\ggj2026\\Assets\\Scripts\\LevelManager.cs",
+              "RelativeToolTip": "Assets\\Scripts\\LevelManager.cs",
+              "ViewState": "AgIAAKMAAAAAAAAAAADwv7kAAAABAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-07-04T12:14:20.751Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 2,
+              "Title": "VictoryManager.cs",
+              "DocumentMoniker": "C:\\Users\\15929\\OneDrive\\\u6587\u6863\\GitHub\\ggj2026\\Assets\\Scripts\\VictoryManager.cs",
+              "RelativeDocumentMoniker": "Assets\\Scripts\\VictoryManager.cs",
+              "ToolTip": "C:\\Users\\15929\\OneDrive\\\u6587\u6863\\GitHub\\ggj2026\\Assets\\Scripts\\VictoryManager.cs",
+              "RelativeToolTip": "Assets\\Scripts\\VictoryManager.cs",
+              "ViewState": "AgIAAEcAAAAAAAAAAADwv10AAAABAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-07-04T12:14:18.304Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 3,
+              "Title": "LevelTarget.cs",
+              "DocumentMoniker": "C:\\Users\\15929\\OneDrive\\\u6587\u6863\\GitHub\\ggj2026\\Assets\\Scripts\\LevelTarget.cs",
+              "RelativeDocumentMoniker": "Assets\\Scripts\\LevelTarget.cs",
+              "ToolTip": "C:\\Users\\15929\\OneDrive\\\u6587\u6863\\GitHub\\ggj2026\\Assets\\Scripts\\LevelTarget.cs",
+              "RelativeToolTip": "Assets\\Scripts\\LevelTarget.cs",
+              "ViewState": "AgIAAEwAAAAAAAAAAADwv2IAAAABAAAAAAAAAA==",
+              "Icon": "00000000-0000-0000-0000-000000000000.000000|iVBORw0KGgoAAAANSUhEUgAAABQAAAAUCAYAAACNiR0NAAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAAKzSURBVDhP7ZJfSFNRHMd/5\u002B7OxvA2NydqppIzC5uFbVQG2p8HKcGHIKSkP5A6eyoX0Ztk9BSUmxVESvRg6kNKsHoIokI0bG5pWVgtfVAwp7Pc3HKb272/zj1dpJee8tHPwzn3/L7f\u002Bzu/c34H1vlviDxMBaf0fd/6NE\u002B\u002BPILPgWnIy8gDu8UOleml4cxMc4Q5KV1jXXo1p07UmGsiiFe5zg8mo1FrDFUVVcUVC3DyEI1FHZxEvAlUeQmf9PL0O0XkvT9FVSNzKcQSMUd4JcxicrKkmHjuj8xUMFGBl4fbow4Dz/GbdqXv9ARjwbuWDKvD7Xcbhv3DAnMpPBxvNyAAi3V8dKokSMkEBA0TFdiRi9oLXPkb84XyrIoOEcFFCGkc8g/aIolwz9mSuu5f0XCt830rhOKhk1T7Tn/pR8BUOttowmcmncm3Rdjq6z3e280qDCzPQyAa6H9x4nW3vKbcMj/YriUSTvISrwPCWViUEB0i0gksgERDy1EDwUIqCCoOJOaR0TtTXfo2oUVZ/pO/fcZWbXaaU5hJaxOqmajAmrKWsDuUd6bnGFm8GF6tkh65mYoT9tIrE0sroWbH6E0IrSztAcQQjX9FIjeDlAPgmElXOFegM3keH\u002Bu7zu4wR8iFXCH3QNlAWa2op01ZJI39069O0UQ9SS75DlEaYbsgblOaQtdyU3AfbcokjftQJJOyhVV4\u002BeUlV1ISq5fiQY/bP3TncF6lkyYxiJJ47d7R\u002B6tV7\u002B/c66LPZmTotLulvHN3tgRqL23O\u002BTdn3j5VLH/usK64YTFbmzXrmfNsDkQXbowvfIofzDk0e6G0KcxcCvXUV7/DxmINJU3iueKG\u002BTqzLcZEBZZQTIh2QM7Ko2gVgVgJ8FZelbCCCtqZS0HcgHZcRhbT\u002BDQ/JDUeISEywMR11giA3/j6Gy64yb2gAAAAAElFTkSuQmCC",
+              "WhenOpened": "2026-07-04T12:14:18.31Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 0,
+              "Title": "AnchorChain.cs",
+              "DocumentMoniker": "C:\\Users\\15929\\OneDrive\\\u6587\u6863\\GitHub\\ggj2026\\Assets\\Scripts\\AnchorChain.cs",
+              "RelativeDocumentMoniker": "Assets\\Scripts\\AnchorChain.cs",
+              "ToolTip": "C:\\Users\\15929\\OneDrive\\\u6587\u6863\\GitHub\\ggj2026\\Assets\\Scripts\\AnchorChain.cs",
+              "RelativeToolTip": "Assets\\Scripts\\AnchorChain.cs",
+              "ViewState": "AgIAALMAAAAAAAAAAADwv8kAAAAFAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-07-04T12:14:18.311Z",
+              "EditorCaption": ""
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
