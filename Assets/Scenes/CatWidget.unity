@@ -1117,7 +1117,7 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 250000}
-  m_Enabled: 1
+  m_Enabled: 0
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: f5f5f5f5f5f5f5f5f5f5f5f5f5f5f5f5, type: 3}
   m_Name: 
@@ -1901,6 +1901,8 @@ MonoBehaviour:
   levelSceneName: SampleScene
   fadeTime: 0.5
   doubleClickTime: 0.25
+  catAnimator: {fileID: 0}
+  touchTrigger: touch
   letterTexts:
   - "\u951A\u5B9A\u9752\u5C71\u4E0D\u653E\u677E\uFF0C\u5C0F\u732B\u6B63\u5728\u5077\u5403\u4E2D\u3002"
   - "\u4E24\u4E2A\u9EC4\u9E42\u9E23\u7FE0\u67F3\uFF0C\u4E00\u53EA\u951A\u54AA\u53E3\u6C34\u6D41\u3002"
@@ -1971,6 +1973,7 @@ MonoBehaviour:
   petCamera: {fileID: 100002}
   raycaster: {fileID: 200004}
   alwaysOnTop: 1
+  petManager: {fileID: 0}
 --- !u!1660057539 &9223372036854775807
 SceneRoots:
   m_ObjectHideFlags: 0
