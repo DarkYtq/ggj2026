@@ -1942,7 +1942,7 @@ MonoBehaviour:
   nextButton: {fileID: 265004}
   closeButton: {fileID: 262004}
   popup: {fileID: 260000}
-  heartSprite: {fileID: 21300000, guid: c0000000000000000000000000000004, type: 3}
+  heartSprite: {fileID: 21300000, guid: 2d489c6addc6839418a683ff7b40aef3, type: 3}
 --- !u!4 &1500002
 Transform:
   m_ObjectHideFlags: 0

@@ -3,9 +3,25 @@ guid: f1f1f1f1f1f1f1f1f1f1f1f1f1f1f1f1
 MonoImporter:
   externalObjects: {}
   serializedVersion: 2
-  defaultReferences: []
+  defaultReferences:
+  - catAnimator: {instanceID: 0}
+  - canvasRoot: {instanceID: 0}
+  - group: {instanceID: 0}
+  - widget: {instanceID: 0}
+  - cat: {instanceID: 0}
+  - catClick: {instanceID: 0}
+  - timerText: {instanceID: 0}
+  - countText: {instanceID: 0}
+  - letterText: {instanceID: 0}
+  - envelopeIcon: {instanceID: 0}
+  - countBadge: {instanceID: 0}
+  - mailboxButton: {instanceID: 0}
+  - nextButton: {instanceID: 0}
+  - closeButton: {instanceID: 0}
+  - popup: {instanceID: 0}
+  - heartSprite: {fileID: 21300000, guid: 2d489c6addc6839418a683ff7b40aef3, type: 3}
   executionOrder: 0
   icon: {instanceID: 0}
-  userData:
-  assetBundleName:
-  assetBundleVariant:
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
