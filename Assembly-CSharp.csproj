@@ -66,14 +66,10 @@
     <Compile Include="Assets\Scripts\UIWidget\CatIdleAnim.cs" />
     <Compile Include="Assets\Scripts\UIWidget\ClickHandler.cs" />
     <Compile Include="Assets\Scripts\UIWidget\CatWidgetManager.cs" />
-    <Compile Include="Assets\Scripts\ChainObstacle.cs" />
     <Compile Include="Assets\Scripts\UIWidget\UIShapes.cs" />
-    <Compile Include="Assets\Scripts\UIWidget\DesktopPet.cs" />
     <Compile Include="Assets\Scripts\LevelManager.cs" />
     <Compile Include="Assets\Scripts\Destructible.cs" />
     <Compile Include="Assets\Scripts\AnchorChain.cs" />
-    <Compile Include="Assets\Scripts\UIWidget\CatDragHandler.cs" />
-    <Compile Include="Assets\Scripts\UIWidget\TransparentWindow.cs" />
     <Compile Include="Assets\Scripts\MeteorHammer.cs" />
     <Compile Include="Assets\Scripts\PlayerThrower.cs" />
   </ItemGroup>
