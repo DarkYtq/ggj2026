@@ -183,6 +183,10 @@ public class CatWidgetManager : MonoBehaviour
         SaveTime();
         if (popup != null) popup.SetActive(false);
 
+        // 退出桌宠模式：停止穿透切换，窗口切回正常不透明可交互全屏，进游戏用
+        var pet = FindObjectOfType<DesktopPet>();
+        if (pet != null) pet.enabled = false;
+
         float t = 0f;
         while (t < fadeTime)
         {
@@ -195,7 +199,12 @@ public class CatWidgetManager : MonoBehaviour
         if (!string.IsNullOrEmpty(levelSceneName))
         {
             if (Application.CanStreamedLevelBeLoaded(levelSceneName))
+            {
+                // 窗口切回正常全屏可交互不透明，再加载关卡
+                TransparentWindow.ExitPetMode();
+                Screen.fullScreenMode = FullScreenMode.FullScreenWindow;
                 SceneManager.LoadScene(levelSceneName);
+            }
             else
                 Debug.LogWarning($"关卡场景 \"{levelSceneName}\" 未加入 Build Settings，无法加载。");
         }

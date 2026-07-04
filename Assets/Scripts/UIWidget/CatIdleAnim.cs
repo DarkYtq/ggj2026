@@ -13,11 +13,19 @@ public class CatIdleAnim : MonoBehaviour
 
     private RectTransform _rt;
     private Vector2 _home;
+    private bool _homeInit;
 
     void Start()
     {
         _rt = GetComponent<RectTransform>();
-        _home = _rt.anchoredPosition;
+        if (!_homeInit) { _home = _rt.anchoredPosition; _homeInit = true; }
+    }
+
+    /// <summary>重设待机基点（拖拽移动小猫后调用）。</summary>
+    public void SetHome(Vector2 home)
+    {
+        _home = home;
+        _homeInit = true;
     }
 
     void Update()

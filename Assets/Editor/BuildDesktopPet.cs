@@ -1,0 +1,179 @@
+#if UNITY_EDITOR
+using System;
+using System.Diagnostics;
+using System.IO;
+using UnityEditor;
+using UnityEditor.Build.Reporting;
+using UnityEngine;
+using UnityEngine.Rendering;
+using Debug = UnityEngine.Debug;
+
+/// <summary>
+/// 一键把 CatWidget 打包成“桌面宠物”。打包前会强制写好所有保证透明/置顶/穿透的设置，
+/// 避免出现黑底。菜单：Build > Desktop Pet ...；命令行：-executeMethod BuildDesktopPet.BuildWindows / BuildMac / BuildAll
+/// </summary>
+public static class BuildDesktopPet
+{
+    private const string ScenePath = "Assets/Scenes/CatWidget.unity";      // 开机场景（桌面宠物）
+    private const string LevelScene = "Assets/Scenes/SampleScene.unity";   // 双击进入的关卡
+    private static readonly string[] Scenes = { ScenePath, LevelScene };
+    private const string OutRoot = "Builds";
+
+    [MenuItem("Build/Desktop Pet - Windows x64")]
+    public static void BuildWindows()
+    {
+        ApplySettings(BuildTarget.StandaloneWindows64);
+        Run(BuildTarget.StandaloneWindows64, Path.Combine(OutRoot, "Windows", "CatPet.exe"));
+    }
+
+    [MenuItem("Build/Desktop Pet - macOS")]
+    public static void BuildMac()
+    {
+        CompileMacPlugin();   // 先确保原生透明插件已编译并被工程引用
+        ApplySettings(BuildTarget.StandaloneOSX);
+        Run(BuildTarget.StandaloneOSX, Path.Combine(OutRoot, "macOS", "CatPet.app"));
+    }
+
+    private const string MacPluginDir = "Assets/Plugins/macOS";
+    private const string MacPluginSrc = MacPluginDir + "/TransparentWindowMac.mm";
+    private const string MacPluginBundle = MacPluginDir + "/TransparentWindowMac.bundle";
+
+    /// <summary>用 clang 把 .mm 编成通用二进制 bundle，并设为 Standalone macOS 可用。仅在 macOS 编辑器上执行。</summary>
+    public static void CompileMacPlugin()
+    {
+        if (Application.platform != RuntimePlatform.OSXEditor)
+        {
+            Debug.LogWarning("[BuildDesktopPet] 当前不在 macOS 编辑器上，跳过原生插件编译。" +
+                "请在 Mac 上执行本步骤，否则 macOS 版没有透明/穿透。");
+            return;
+        }
+        if (!File.Exists(MacPluginSrc))
+        {
+            Debug.LogError("[BuildDesktopPet] 找不到原生插件源码：" + MacPluginSrc);
+            return;
+        }
+
+        // 源码比 bundle 新时才重编
+        bool need = !File.Exists(MacPluginBundle) ||
+                    File.GetLastWriteTimeUtc(MacPluginSrc) > File.GetLastWriteTimeUtc(MacPluginBundle);
+        if (need)
+        {
+            var args = $"-bundle -arch arm64 -arch x86_64 -framework Cocoa -framework QuartzCore -framework Metal " +
+                       $"-o \"{MacPluginBundle}\" \"{MacPluginSrc}\"";
+            var psi = new ProcessStartInfo("/usr/bin/clang", args)
+            {
+                UseShellExecute = false, RedirectStandardError = true, RedirectStandardOutput = true,
+                WorkingDirectory = Directory.GetCurrentDirectory()
+            };
+            using (var p = Process.Start(psi))
+            {
+                string err = p.StandardError.ReadToEnd();
+                string outp = p.StandardOutput.ReadToEnd();
+                p.WaitForExit();
+                if (p.ExitCode != 0)
+                {
+                    Debug.LogError("[BuildDesktopPet] clang 编译原生插件失败（需已安装 Xcode Command Line Tools）：\n" + err + outp);
+                    return;
+                }
+            }
+            Debug.Log("[BuildDesktopPet] 已编译 " + MacPluginBundle);
+        }
+
+        // 导入并标记为 Standalone macOS 原生插件
+        AssetDatabase.ImportAsset(MacPluginBundle, ImportAssetOptions.ForceUpdate);
+        var imp = AssetImporter.GetAtPath(MacPluginBundle) as PluginImporter;
+        if (imp != null)
+        {
+            imp.SetCompatibleWithAnyPlatform(false);
+            imp.SetCompatibleWithEditor(false);
+            imp.SetCompatibleWithPlatform(BuildTarget.StandaloneOSX, true);
+            imp.SaveAndReimport();
+        }
+    }
+
+    [MenuItem("Build/Desktop Pet - Both")]
+    public static void BuildAll()
+    {
+        BuildWindows();
+        BuildMac();
+    }
+
+    /// <summary>把桌面宠物所需的 Player/图形设置强制写好。</summary>
+    private static void ApplySettings(BuildTarget target)
+    {
+        // 窗口行为：窗口化（我们自己把窗口铺满并做透明），后台运行，不可全屏切换/缩放
+        PlayerSettings.fullScreenMode = FullScreenMode.Windowed;
+        PlayerSettings.runInBackground = true;
+        PlayerSettings.visibleInBackground = true;
+        PlayerSettings.resizableWindow = false;
+        PlayerSettings.allowFullscreenSwitch = false;
+        PlayerSettings.forceSingleInstance = true;
+        PlayerSettings.defaultIsNativeResolution = true;
+        PlayerSettings.captureSingleScreen = false;
+        PlayerSettings.usePlayerLog = true;
+
+        // 关键：图形 API。Windows 透明依赖 D3D11 + flip-model 交换链；macOS 用 Metal。
+        PlayerSettings.SetUseDefaultGraphicsAPIs(target, false);
+        if (target == BuildTarget.StandaloneWindows64 || target == BuildTarget.StandaloneWindows)
+            PlayerSettings.SetGraphicsAPIs(target, new[] { GraphicsDeviceType.Direct3D11 });
+        else if (target == BuildTarget.StandaloneOSX)
+            PlayerSettings.SetGraphicsAPIs(target, new[] { GraphicsDeviceType.Metal });
+
+        // flip-model 交换链（透明必需）。个别 Unity 版本未暴露该脚本 API，
+        // 已在 ProjectSettings 里置为开启，这里用反射兜底设置，设不上也不影响。
+        TrySetFlipModel();
+
+        // 去掉开屏 Logo（个人版可能忽略，用 try 包住避免报错中断打包）
+        try { PlayerSettings.SplashScreen.show = false; PlayerSettings.SplashScreen.showUnityLogo = false; }
+        catch { /* 个人版不可关，忽略 */ }
+
+        // 确保场景在构建列表且启用
+        EnsureSceneInBuild();
+        AssetDatabase.SaveAssets();
+    }
+
+    private static void TrySetFlipModel()
+    {
+        try
+        {
+            var p = typeof(PlayerSettings).GetProperty("useFlipModelSwapchain",
+                System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Static);
+            if (p != null && p.CanWrite) p.SetValue(null, true, null);
+        }
+        catch { /* 忽略：ProjectSettings 里已开启 */ }
+    }
+
+    private static void EnsureSceneInBuild()
+    {
+        var scenes = new System.Collections.Generic.List<EditorBuildSettingsScene>(EditorBuildSettings.scenes);
+        // SampleScene 先确保在列表里（在后）
+        if (!scenes.Exists(s => s.path == LevelScene))
+            scenes.Add(new EditorBuildSettingsScene(LevelScene, true));
+        // CatWidget 必须是第 0 个（开机进桌面宠物）
+        scenes.RemoveAll(s => s.path == ScenePath);
+        scenes.Insert(0, new EditorBuildSettingsScene(ScenePath, true));
+        EditorBuildSettings.scenes = scenes.ToArray();
+    }
+
+    private static void Run(BuildTarget target, string outputPath)
+    {
+        Directory.CreateDirectory(Path.GetDirectoryName(outputPath));
+
+        var opts = new BuildPlayerOptions
+        {
+            scenes = Scenes,
+            locationPathName = outputPath,
+            target = target,
+            targetGroup = BuildTargetGroup.Standalone,
+            options = BuildOptions.None
+        };
+
+        BuildReport report = BuildPipeline.BuildPlayer(opts);
+        BuildSummary s = report.summary;
+        Debug.Log($"[BuildDesktopPet] {target} => {s.result}  size={s.totalSize} bytes  out={outputPath}");
+
+        if (s.result != BuildResult.Succeeded)
+            throw new Exception($"[BuildDesktopPet] 打包失败：{target} -> {s.result}");
+    }
+}
+#endif
