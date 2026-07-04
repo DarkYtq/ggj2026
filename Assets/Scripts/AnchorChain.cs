@@ -23,14 +23,14 @@ public class AnchorChain : MonoBehaviour
     public SpriteRenderer anchorRenderer; // 锚头
 
     [Header("物理（世界单位 / 秒）")]
-    public float gravity = 22f;
-    [Range(0.01f, 1f)] public float dragPerSecond = 0.45f;
+    public float gravity = 18f;
+    [Range(0.01f, 1f)] public float dragPerSecond = 0.97f;
     public float chainMax = 10f;
     public float launchMaxSpeed = 26f;
     public float bounceSpeed = 18f;
     public float anchorRadius = 0.22f;
-    [Range(1, 8)] public int substeps = 3;
-    public float settleSpeed = 0.4f;
+    [Range(1, 8)] public int substeps = 4;
+    public float settleSpeed = 0.15f;
 
     [Header("瞄准")]
     public float grabRadius = 1.8f;
@@ -57,6 +57,10 @@ public class AnchorChain : MonoBehaviour
     readonly HashSet<Collider2D> _hit = new HashSet<Collider2D>();
     readonly HashSet<Collider2D> _launched = new HashSet<Collider2D>();
     bool _maxLen;
+    bool _chainCut;
+    int _settleFrames;
+    LevelTarget _target;           // ← 加这行
+    public Vector2 AnchorVelocity => _vel;
 
     class Obs { public Collider2D col; public ChainObstacle.Kind kind; public Vector2 dir; }
     readonly List<Obs> _obs = new List<Obs>();
@@ -83,6 +87,7 @@ public class AnchorChain : MonoBehaviour
         }
 
         CollectObstacles();
+        FindTarget();
     }
 
     void ConfigLine(LineRenderer lr, Color color, float width, int order)
@@ -116,6 +121,11 @@ public class AnchorChain : MonoBehaviour
                 dir = co != null ? co.launchDir.normalized : Vector2.up
             });
         }
+    }
+    void FindTarget()
+    {
+        _target = FindObjectOfType<LevelTarget>();
+        Debug.Log($"[AnchorChain] 目标：{(_target != null ? _target.name : "无")}");
     }
 
     // ================= 输入 =================
@@ -172,6 +182,23 @@ public class AnchorChain : MonoBehaviour
         _hit.Clear();
         _launched.Clear();
         _maxLen = false;
+        _chainCut = false;
+        _settleFrames = 0;
+        // 目标重置（关卡重开时）
+        if (_target != null) _target.ResetTarget();
+    }
+
+    /// <summary>由 LevelManager 在关卡切换时调用</summary>
+    public void ForceReset()
+    {
+        _phase = Phase.Idle;
+        ClearShot();
+        if (anchorRenderer != null) anchorRenderer.gameObject.SetActive(false);
+        if (chainLine != null) chainLine.positionCount = 0;
+        if (aimLine != null) aimLine.positionCount = 0;
+        if (trajLine != null) trajLine.positionCount = 0;
+        CollectObstacles();  // 重新扫描新关卡的障碍物
+        FindTarget();        // 重新找目标
     }
 
     // ================= 物理 =================
@@ -186,31 +213,59 @@ public class AnchorChain : MonoBehaviour
 
         if (_vel.magnitude < settleSpeed && _maxLen)
         {
-            _vel = Vector2.zero;
-            _phase = Phase.Settled;
+            _settleFrames++;
+            if (_settleFrames > 40) // 连续40帧速度都很低才真正静止
+            {
+                _vel = Vector2.zero;
+                _phase = Phase.Settled;
+                _settleFrames = 0;
+            }
+        }
+        else
+        {
+            _settleFrames = 0; // 速度恢复则重置计数
         }
     }
 
     void Substep(float dt)
     {
+        // 1. 重力 + 空气阻力
         _vel.y -= gravity * dt;
         _vel *= Mathf.Pow(dragPerSecond, dt);
         _pos += _vel * dt;
 
-        Vector2 last = _nodes[_nodes.Count - 1];
-        float used = 0f;
-        for (int i = 1; i < _nodes.Count; i++) used += Vector2.Distance(_nodes[i], _nodes[i - 1]);
-        float remaining = chainMax - used;
-        float tail = Vector2.Distance(_pos, last);
-        if (remaining >= 0f && tail > remaining)
+        // 2. 链条长度约束（圆弧摆动核心）
+        // 2. 链条长度约束（切断后跳过，锚头自由飞行）
+        if (!_chainCut)
         {
-            Vector2 dir = (_pos - last).normalized;
-            _pos = last + dir * remaining;
-            float vOut = Vector2.Dot(_vel, dir);
-            if (vOut > 0f) _vel -= dir * vOut;
-            _maxLen = true;
+            Vector2 last = _nodes[_nodes.Count - 1];
+            float used = 0f;
+            for (int i = 1; i < _nodes.Count; i++)
+                used += Vector2.Distance(_nodes[i], _nodes[i - 1]);
+
+            float remaining = Mathf.Max(0f, chainMax - used);
+            float tail = Vector2.Distance(_pos, last);
+
+            if (tail > remaining)
+            {
+                Vector2 dir = (_pos - last).normalized;
+                _pos = last + dir * remaining;
+                float vOut = Vector2.Dot(_vel, dir);
+                if (vOut > 0f) _vel -= dir * vOut;
+                _maxLen = true;
+            }
+            else if (_maxLen)
+            {
+                Vector2 dir = tail > 0.001f
+                    ? (_pos - last).normalized
+                    : Vector2.down;
+                _pos = last + dir * remaining;
+                float vRadial = Vector2.Dot(_vel, dir);
+                _vel -= dir * vRadial;
+            }
         }
 
+        // 3. 锚头与障碍物碰撞（原代码不变）
         for (int i = 0; i < _obs.Count; i++)
         {
             var o = _obs[i];
@@ -218,21 +273,42 @@ public class AnchorChain : MonoBehaviour
             if (!CircleRect(_pos, anchorRadius, o.col.bounds, out Vector2 n, out float dep)) continue;
 
             _pos += n * dep;
+
             if (o.kind == ChainObstacle.Kind.Launcher)
             {
                 if (!_launched.Contains(o.col))
                 {
                     _launched.Add(o.col);
                     _vel = o.dir * bounceSpeed;
-                    _maxLen = false;
+                    _maxLen = false;  // 弹射后重置，允许链条重新延伸
                 }
             }
             else
             {
-                if (!_hit.Contains(o.col)) { _hit.Add(o.col); _vel = Vector2.zero; }
-                else { float vN = Vector2.Dot(_vel, n); if (vN < 0f) _vel -= n * vN; }
+                if (!_hit.Contains(o.col))
+                {
+                    _hit.Add(o.col);
+                    _vel = Vector2.zero;
+                }
+                else
+                {
+                    float vN = Vector2.Dot(_vel, n);
+                    if (vN < 0f) _vel -= n * vN;
+                }
             }
         }
+
+        if (_target != null && !_target.IsHooked)
+        {
+            var tcol = _target.GetComponent<Collider2D>();
+            if (tcol != null && CircleRect(_pos, anchorRadius, tcol.bounds, out Vector2 tn, out float tdep))
+            {
+                _pos += tn * tdep;
+                _vel = Vector2.zero;
+                _target.Hook();
+            }
+        }
+
     }
 
     void KinkChain()
@@ -268,6 +344,7 @@ public class AnchorChain : MonoBehaviour
                     if (s > 0) _nodes.RemoveRange(0, s);
                     _nodes[0] = pt;
                     _maxLen = false;
+                    _chainCut = true;
                     return;
                 }
             }
@@ -318,8 +395,9 @@ public class AnchorChain : MonoBehaviour
     // ================= 绘制 =================
     void Draw()
     {
-        bool showChain = (_phase == Phase.Flying || _phase == Phase.Settled) && _nodes.Count > 0;
-        if (chainLine != null)
+        bool showChain = (_phase == Phase.Flying || _phase == Phase.Settled)
+                         && _nodes.Count > 0
+                         && !_chainCut; // ← 切断后不显示链条和锚头        if (chainLine != null)
         {
             if (showChain)
             {
@@ -332,8 +410,10 @@ public class AnchorChain : MonoBehaviour
         }
         if (anchorRenderer != null)
         {
-            anchorRenderer.gameObject.SetActive(showChain);
-            if (showChain) anchorRenderer.transform.position = _pos;
+            // 锚头单独判断：飞行或静止时始终显示，与链条是否被切断无关
+            bool showAnchor = (_phase == Phase.Flying || _phase == Phase.Settled);
+            anchorRenderer.gameObject.SetActive(showAnchor);
+            if (showAnchor) anchorRenderer.transform.position = _pos;
         }
 
         if (_phase == Phase.Aiming)
