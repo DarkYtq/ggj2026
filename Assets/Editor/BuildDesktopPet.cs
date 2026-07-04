@@ -31,9 +31,12 @@ public static class BuildDesktopPet
     };
     private const string OutRoot = "Builds";
 
+    private const string ProductProcess = "CatPet";   // 产物可执行名（CatPet.exe / CatPet.app）
+
     [MenuItem("Build/Desktop Pet - Windows x64")]
     public static void BuildWindows()
     {
+        KillRunningGame();    // 先结束正在运行的旧游戏，避免覆盖时文件被占用
         ApplySettings(BuildTarget.StandaloneWindows64);
         Run(BuildTarget.StandaloneWindows64, Path.Combine(OutRoot, "Windows", "CatPet.exe"));
     }
@@ -41,9 +44,47 @@ public static class BuildDesktopPet
     [MenuItem("Build/Desktop Pet - macOS")]
     public static void BuildMac()
     {
-        CompileMacPlugin();   // 先确保原生透明插件已编译并被工程引用
+        KillRunningGame();    // 先结束正在运行的旧游戏
+        CompileMacPlugin();   // 确保原生透明插件已编译并被工程引用
         ApplySettings(BuildTarget.StandaloneOSX);
         Run(BuildTarget.StandaloneOSX, Path.Combine(OutRoot, "macOS", "CatPet.app"));
+    }
+
+    /// <summary>结束正在运行的已打包游戏进程（Windows / macOS 都处理）。</summary>
+    public static void KillRunningGame()
+    {
+        try
+        {
+            if (Application.platform == RuntimePlatform.WindowsEditor)
+            {
+                RunSilent("taskkill", $"/F /T /IM {ProductProcess}.exe");
+            }
+            else if (Application.platform == RuntimePlatform.OSXEditor)
+            {
+                RunSilent("/usr/bin/killall", ProductProcess);          // .app 内可执行名
+                RunSilent("/usr/bin/pkill", $"-f {ProductProcess}.app"); // 兜底：按路径匹配
+            }
+            System.Threading.Thread.Sleep(400);   // 等系统释放文件占用
+            Debug.Log("[BuildDesktopPet] 已尝试结束旧游戏进程：" + ProductProcess);
+        }
+        catch (Exception e)
+        {
+            Debug.LogWarning("[BuildDesktopPet] 结束旧进程失败（可忽略）：" + e.Message);
+        }
+    }
+
+    private static void RunSilent(string exe, string args)
+    {
+        try
+        {
+            var psi = new ProcessStartInfo(exe, args)
+            {
+                UseShellExecute = false, CreateNoWindow = true,
+                RedirectStandardOutput = true, RedirectStandardError = true
+            };
+            using (var p = Process.Start(psi)) { if (p != null) p.WaitForExit(2000); }
+        }
+        catch { /* 进程不存在 / 命令不可用等，忽略 */ }
     }
 
     private const string MacPluginDir = "Assets/Plugins/macOS";

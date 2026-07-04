@@ -30,6 +30,8 @@ public class AnchorChain : MonoBehaviour
     public float launchMaxSpeed = 26f;
     public float bounceSpeed = 18f;
     public float anchorRadius = 0.22f;
+    [Tooltip("命中目标的额外容差半径（越大越好钩中）")]
+    public float hookRadius = 0.2f;
     [Range(1, 8)] public int substeps = 4;
     public float settleSpeed = 0.15f;
 
@@ -68,6 +70,7 @@ public class AnchorChain : MonoBehaviour
     bool _chainCut;
     int _settleFrames;
     LevelTarget _target;           // ← 加这行
+    Collider2D _targetCol;         // 目标碰撞体（缓存，避免每子步 GetComponent）
     float _winTimer;
     bool _won;
     public Vector2 AnchorVelocity => _vel;
@@ -135,12 +138,15 @@ public class AnchorChain : MonoBehaviour
     void FindTarget()
     {
         _target = FindObjectOfType<LevelTarget>();
+        _targetCol = _target != null ? _target.GetComponent<Collider2D>() : null;
         Debug.Log($"[AnchorChain] 目标：{(_target != null ? _target.name : "无")}");
     }
 
     // ================= 输入 =================
     void Update()
     {
+        if (Input.GetKeyDown(KeyCode.Escape)) { Application.Quit(); return; }   // 应急退出
+
         if (_cam == null) _cam = Camera.main;
         if (_cam == null) return;
         Vector2 mouse = _cam.ScreenToWorldPoint(Input.mousePosition);
@@ -277,6 +283,8 @@ public class AnchorChain : MonoBehaviour
             return;
         }
 
+        Vector2 startPos = _pos;   // 记录本子步起点，用于扫掠命中检测（防高速隧穿）
+
         // 1. 重力 + 空气阻力
         _vel.y -= gravity * dt;
         _vel *= Mathf.Pow(dragPerSecond, dt);
@@ -346,17 +354,20 @@ public class AnchorChain : MonoBehaviour
             }
         }
 
-        if (_target != null && !_target.IsHooked)
+        // 命中目标：扫掠检测 —— 把目标包围盒外扩(锚半径+容差)，再用本子步移动线段做相交，
+        // 这样即使锚头飞得快、两个采样点之间跨过目标，也能可靠判定为钩住（不再看角度/速度）。
+        if (_target != null && !_target.IsHooked && _targetCol != null)
         {
-            var tcol = _target.GetComponent<Collider2D>();
-            if (tcol != null && CircleRect(_pos, anchorRadius, tcol.bounds, out Vector2 tn, out float tdep))
+            Bounds eb = _targetCol.bounds;
+            float pad = anchorRadius + hookRadius;
+            eb.Expand(new Vector3(pad * 2f, pad * 2f, 0f));
+            if (SegRect(startPos, _pos, eb, out _, out _))
             {
-                _pos += tn * tdep;
+                _pos = _target.Position;   // 贴到目标中心并钉住
                 _vel = Vector2.zero;
                 _target.Hook();
             }
         }
-
     }
 
     void KinkChain()

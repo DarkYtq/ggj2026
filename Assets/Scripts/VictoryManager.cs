@@ -58,13 +58,7 @@ public class VictoryManager : MonoBehaviour
 
     void Update()
     {
-        // Esc：任意时刻从关卡返回桌宠场景
-        if (Input.GetKeyDown(KeyCode.Escape))
-        {
-            ReturnToCatWidget();
-            return;
-        }
-
+        // 注：按 Esc 返回桌宠场景由全局的 LevelEscReturn 处理（免挂载、任何关卡都生效）。
         if (_victoryTriggered || _target == null || anchorChain == null) return;
 
         // 目标未被钩住 → 重置计时

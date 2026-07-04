@@ -39,6 +39,13 @@ case "${1:-both}" in
   *)    echo "未知参数：$1（可选 win / mac / both）"; exit 1 ;;
 esac
 
+# 先结束正在运行的旧游戏，避免覆盖 .app/.exe 时文件被占用
+echo "结束旧游戏进程 CatPet（若在运行）……"
+if [[ "$(uname)" == "Darwin" || "$(uname)" == "Linux" ]]; then
+  killall CatPet 2>/dev/null || true
+  pkill -f "CatPet.app" 2>/dev/null || true
+fi
+
 mkdir -p "$PROJECT/Builds"
 LOG="$PROJECT/Builds/build.log"
 

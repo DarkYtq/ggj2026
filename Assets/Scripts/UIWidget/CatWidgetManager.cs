@@ -194,6 +194,15 @@ public class CatWidgetManager : MonoBehaviour
 
     IEnumerator EnterLevel()
     {
+        // 先确定一个“确实能加载”的关卡场景，再淡出。
+        // 否则一旦名字对不上，widget 已淡出到 alpha 0 又没场景可切 → 只剩透明空屏（“被强制看不见”）。
+        string target = ResolveLevelScene();
+        if (string.IsNullOrEmpty(target))
+        {
+            Debug.LogWarning("[CatWidget] Build Settings 里找不到可加载的关卡场景，取消进入，保持桌宠显示。");
+            yield break;   // 不淡出、不禁用，避免空屏
+        }
+
         _inLevel = true;          // 计时暂停
         SaveTime();
         if (popup != null) popup.SetActive(false);
@@ -211,18 +220,44 @@ public class CatWidgetManager : MonoBehaviour
         }
         if (group != null) group.alpha = 0f;
 
-        if (!string.IsNullOrEmpty(levelSceneName))
+        // 窗口切回正常全屏可交互不透明，再加载关卡
+        TransparentWindow.ExitPetMode();
+        Screen.fullScreenMode = FullScreenMode.FullScreenWindow;
+        SceneManager.LoadScene(target);
+    }
+
+    /// <summary>
+    /// 解析要进入的关卡场景名，跟场景叫 "Level 1" 还是 "Level1" 无关：
+    /// 1) levelSceneName 若能加载，直接用；
+    /// 2) 否则在 Build Settings 里找名字含 "level"+数字 的场景，取编号最小的（一般是第一关）；
+    /// 3) 再不行就用除本(桌宠)场景外 Build Settings 里的第一个场景；
+    /// 4) 都没有则返回 null。
+    /// </summary>
+    string ResolveLevelScene()
+    {
+        if (!string.IsNullOrEmpty(levelSceneName) && Application.CanStreamedLevelBeLoaded(levelSceneName))
+            return levelSceneName;
+
+        string thisScene = gameObject.scene.name;
+        string best = null; int bestNum = int.MaxValue; string firstOther = null;
+
+        int count = SceneManager.sceneCountInBuildSettings;
+        for (int i = 0; i < count; i++)
         {
-            if (Application.CanStreamedLevelBeLoaded(levelSceneName))
+            string path = SceneUtility.GetScenePathByBuildIndex(i);
+            string name = System.IO.Path.GetFileNameWithoutExtension(path);
+            if (string.IsNullOrEmpty(name) || name == thisScene) continue;  // 跳过桌宠场景
+
+            if (firstOther == null) firstOther = name;
+
+            var m = System.Text.RegularExpressions.Regex.Match(name, @"[Ll]evel\D*(\d+)");
+            if (m.Success && int.TryParse(m.Groups[1].Value, out int num) && num < bestNum)
             {
-                // 窗口切回正常全屏可交互不透明，再加载关卡
-                TransparentWindow.ExitPetMode();
-                Screen.fullScreenMode = FullScreenMode.FullScreenWindow;
-                SceneManager.LoadScene(levelSceneName);
+                bestNum = num;
+                best = name;
             }
-            else
-                Debug.LogWarning($"关卡场景 \"{levelSceneName}\" 未加入 Build Settings，无法加载。");
         }
+        return best ?? firstOther;
     }
 
     // ---------- 信箱 / 弹窗 ----------

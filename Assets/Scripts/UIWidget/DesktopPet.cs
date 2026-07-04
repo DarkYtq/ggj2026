@@ -29,6 +29,7 @@ public class DesktopPet : MonoBehaviour
     private readonly List<RaycastResult> _results = new List<RaycastResult>();
     private bool _clickThrough = true;   // 初始穿透
     private bool _prevMouseDown;         // 上一帧全局左键状态，用于检测“按下”的上升沿
+    private float _quitTimer;            // 应急退出手势计时
 
     void Start()
     {
@@ -77,6 +78,20 @@ public class DesktopPet : MonoBehaviour
 
     void Update()
     {
+        // —— 应急退出：同时按住鼠标左右键约 1.2 秒（或按住 Esc）→ 退出程序。
+        //    用全局按键状态，即使窗口穿透/未聚焦也有效，防止桌宠卡住无法关闭。 ——
+        if (TransparentWindow.IsBothMouseDown() || TransparentWindow.IsEscapeDown())
+        {
+            _quitTimer += Time.unscaledDeltaTime;
+            if (_quitTimer > 1.2f)
+            {
+                Debug.Log("[DesktopPet] 应急退出触发");
+                Application.Quit();
+                return;
+            }
+        }
+        else _quitTimer = 0f;
+
         if (raycaster == null) return;
         if (_es == null) { _es = EventSystem.current; if (_es == null) return; }
         if (_ped == null) _ped = new PointerEventData(_es);
@@ -99,19 +114,14 @@ public class DesktopPet : MonoBehaviour
         // DragActive 来自 Unity 拖拽事件（可靠，不依赖原生）；再叠加系统级按键做兜底。
         if (DragActive || TransparentWindow.IsPrimaryMouseDown()) return;
 
-        bool overUI;
+        Vector2 probe;
         if (!_clickThrough)
-        {
-            // 已可交互：窗口能收到鼠标，用引擎自身的 Input.mousePosition 判定（像素级准确，
-            // 避免因全局光标坐标偏差而误判成“没压在 UI 上”→ 错误开穿透）。
-            overUI = IsOverInteractive(Input.mousePosition);
-        }
-        else
-        {
-            // 穿透态：引擎收不到鼠标，只能用系统全局光标判断是否该恢复交互。
-            if (!TransparentWindow.TryGetCursor(out Vector2 cursor)) return;
-            overUI = IsOverInteractive(cursor);
-        }
+            probe = Input.mousePosition;            // 可交互：引擎鼠标最准
+        else if (!TransparentWindow.TryGetCursor(out probe))
+            return;                                 // 穿透态：用系统全局光标
+
+        // 命中任意 UI，或命中右上角“×”退出按钮区域 → 保持窗口可交互
+        bool overUI = IsOverInteractive(probe) || InQuitButton(probe);
 
         bool wantClickThrough = !overUI;
         if (wantClickThrough != _clickThrough)
@@ -127,5 +137,25 @@ public class DesktopPet : MonoBehaviour
         _results.Clear();
         raycaster.Raycast(_ped, _results);
         return _results.Count > 0;   // 命中任意 raycastTarget 图形即视为可交互区域
+    }
+
+    // ===== 右上角始终可用的“×”退出按钮（不依赖点击穿透是否正常，保证能关掉）=====
+    const float QuitW = 40f, QuitH = 28f, QuitMargin = 8f;
+
+    // 屏幕坐标（原点左下，与全局光标 / Input.mousePosition 一致）是否落在退出按钮上
+    private bool InQuitButton(Vector2 sp)
+    {
+        return sp.x >= Screen.width - QuitW - QuitMargin && sp.x <= Screen.width - QuitMargin
+            && sp.y >= Screen.height - QuitH - QuitMargin && sp.y <= Screen.height - QuitMargin;
+    }
+
+    void OnGUI()
+    {
+        // GUI 坐标原点在左上角
+        var r = new Rect(Screen.width - QuitW - QuitMargin, QuitMargin, QuitW, QuitH);
+        var prev = GUI.color;
+        GUI.color = new Color(0.85f, 0.2f, 0.15f, 0.9f);
+        if (GUI.Button(r, "×")) Application.Quit();
+        GUI.color = prev;
     }
 }
