@@ -97,4 +97,24 @@ int _PressedMouseButtons() {
     return (int)[NSEvent pressedMouseButtons];
 }
 
+// 退出桌宠模式：恢复成正常不透明、可交互、非置顶的全屏窗口（进关卡时调用）。
+void _ExitPetMode() {
+    dispatch_async(dispatch_get_main_queue(), ^{
+        NSWindow* w = UnityWindow();
+        if (!w) return;
+        [w setIgnoresMouseEvents:NO];
+        [w setOpaque:YES];
+        [w setHasShadow:YES];
+        [w setBackgroundColor:[NSColor blackColor]];
+        [w setLevel:NSNormalWindowLevel];
+        NSView* v = [w contentView];
+        CALayer* root = v.layer;
+        if (root) root.opaque = YES;
+        CALayer* ml = FindMetalLayer(root);
+        if (ml) ml.opaque = YES;
+        NSRect f = [[NSScreen mainScreen] frame];
+        [w setFrame:f display:YES];
+    });
+}
+
 }

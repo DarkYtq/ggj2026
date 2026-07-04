@@ -40,6 +40,7 @@ public static class TransparentWindow
     [DllImport("TransparentWindowMac")] private static extern void _SetClickThrough([MarshalAs(UnmanagedType.I1)] bool enable);
     [DllImport("TransparentWindowMac")] private static extern void _GetGlobalMouse(out float x, out float y);
     [DllImport("TransparentWindowMac")] private static extern int _PressedMouseButtons();
+    [DllImport("TransparentWindowMac")] private static extern void _ExitPetMode();
 
     private static bool _native = true;
     private static bool _warned = false;
@@ -86,6 +87,22 @@ public static class TransparentWindow
 #elif UNITY_STANDALONE_OSX && !UNITY_EDITOR
         if (_native) { try { _SetClickThrough(enable); } catch (DllNotFoundException) { MacFail(); } catch (EntryPointNotFoundException) { MacFail(); } }
 #endif
+    }
+
+    /// <summary>退出桌宠模式：关闭穿透、取消置顶、恢复不透明，切回可交互的正常全屏窗口（进入关卡时调用）。</summary>
+    public static void ExitPetMode()
+    {
+#if UNITY_STANDALONE_WIN && !UNITY_EDITOR
+        if (_hwnd == IntPtr.Zero) _hwnd = GetActiveWindow();
+        SetWindowLong(_hwnd, GWL_EXSTYLE, 0);                 // 去掉 透明/置顶/工具窗
+        var m = new MARGINS { left = 0, right = 0, top = 0, bottom = 0 };
+        DwmExtendFrameIntoClientArea(_hwnd, ref m);           // 关闭 DWM 透明扩展 => 不透明
+        SetWindowPos(_hwnd, HWND_NOTOPMOST, 0, 0, _screenW, _screenH,
+                     SWP_FRAMECHANGED | SWP_SHOWWINDOW | SWP_NOACTIVATE);
+#elif UNITY_STANDALONE_OSX && !UNITY_EDITOR
+        if (_native) { try { _ExitPetMode(); } catch (DllNotFoundException) { MacFail(); } catch (EntryPointNotFoundException) { MacFail(); } }
+#endif
+        _ready = false;   // 之后 SetClickThrough 变为空操作，防止再被切回穿透
     }
 
     /// <summary>全局左键是否按下（不依赖窗口焦点）。用于穿透切换的守卫，避免拖拽被打断。</summary>

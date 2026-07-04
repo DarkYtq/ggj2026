@@ -8,33 +8,38 @@ using UnityEngine;
 /// - 三种障碍（见 ChainObstacle）：普通=锚撞停/链绕折点；切链器=链碰即断；弹射器=锚碰弹飞。
 /// - 物理用子步积分；几何用 segRect(线段-AABB) / circleRect(圆-AABB)。链条是折点链表。
 ///
-/// 挂在玩家物体上即可：运行时会自动发现场景里的碰撞体当障碍、禁用旧的弹弓脚本、
-/// 并生成一个切链器和一个弹射器示例。用 LineRenderer 画链与预测线，SpriteRenderer 画锚头。
+/// 所有可视物件（锚头、三条 LineRenderer、切链器/弹射器示例）都已摆在场景里，本脚本只引用不创建；
+/// 障碍从场景现有碰撞体自动读入（带 ChainObstacle 的按其类型，其余按普通）。
 /// </summary>
 public class AnchorChain : MonoBehaviour
 {
     [Header("发射原点（留空 = 本物体中心）")]
     public Transform origin;
 
+    [Header("场景引用（在 Inspector 连好）")]
+    public LineRenderer chainLine;      // 链条
+    public LineRenderer aimLine;        // 瞄准方向箭头
+    public LineRenderer trajLine;       // 预测弹道
+    public SpriteRenderer anchorRenderer; // 锚头
+
     [Header("物理（世界单位 / 秒）")]
-    public float gravity = 22f;           // 向下加速度大小
-    [Range(0.01f, 1f)] public float dragPerSecond = 0.45f;   // 每秒保留的速度比例（空气阻力）
-    public float chainMax = 10f;          // 链长上限
-    public float launchMaxSpeed = 26f;    // 发射初速上限
-    public float bounceSpeed = 18f;       // 弹射器弹飞速度
+    public float gravity = 22f;
+    [Range(0.01f, 1f)] public float dragPerSecond = 0.45f;
+    public float chainMax = 10f;
+    public float launchMaxSpeed = 26f;
+    public float bounceSpeed = 18f;
     public float anchorRadius = 0.22f;
     [Range(1, 8)] public int substeps = 3;
-    public float settleSpeed = 0.4f;      // 到顶且低于此速判定静止
+    public float settleSpeed = 0.4f;
 
     [Header("瞄准")]
-    public float grabRadius = 1.8f;       // 必须点在玩家附近才能拉
-    public float launchSpeedPerUnit = 7f; // 拉拽距离(单位)→初速
+    public float grabRadius = 1.8f;
+    public float launchSpeedPerUnit = 7f;
     public float maxPull = 4f;
     public float previewSeconds = 1.4f;
 
     [Header("障碍识别")]
     public LayerMask obstacleMask = ~0;
-    public bool spawnDemoObstacles = true;   // 自动生成切链器/弹射器示例
 
     [Header("外观")]
     public Color chainColor = new Color(0.6f, 0.67f, 0.73f);
@@ -47,18 +52,14 @@ public class AnchorChain : MonoBehaviour
 
     Camera _cam;
     Vector2 _aimStart, _aimMouse;
-    Vector2 _pos, _vel;                       // 锚头位置/速度
-    readonly List<Vector2> _nodes = new List<Vector2>();   // 链条折点（[0] 为链根）
+    Vector2 _pos, _vel;
+    readonly List<Vector2> _nodes = new List<Vector2>();
     readonly HashSet<Collider2D> _hit = new HashSet<Collider2D>();
     readonly HashSet<Collider2D> _launched = new HashSet<Collider2D>();
     bool _maxLen;
 
     class Obs { public Collider2D col; public ChainObstacle.Kind kind; public Vector2 dir; }
     readonly List<Obs> _obs = new List<Obs>();
-
-    LineRenderer _chainLR, _aimLR, _trajLR;
-    SpriteRenderer _anchorSR;
-    Sprite _circleSprite, _squareSprite;
 
     Vector2 O => origin != null ? (Vector2)origin.position : (Vector2)transform.position;
 
@@ -72,25 +73,28 @@ public class AnchorChain : MonoBehaviour
         foreach (var t in FindObjectsOfType<PlayerThrower>()) t.enabled = false;
         foreach (var h in FindObjectsOfType<MeteorHammer>()) { h.enabled = false; h.gameObject.SetActive(false); }
 
-        _squareSprite = MakeSquareSprite();
-        _circleSprite = MakeCircleSprite(64);
-
-        _chainLR = MakeLine("Chain", chainColor, 0.09f, 5);
-        _aimLR = MakeLine("Aim", aimColor, 0.07f, 6);
-        _trajLR = MakeLine("Traj", new Color(aimColor.r, aimColor.g, aimColor.b, 0.55f), 0.05f, 6);
-
-        var a = new GameObject("Anchor");
-        a.transform.SetParent(transform, false);
-        _anchorSR = a.AddComponent<SpriteRenderer>();
-        _anchorSR.sprite = _circleSprite;
-        _anchorSR.color = anchorColor;
-        _anchorSR.sortingOrder = 7;
-        float d = anchorRadius * 2f;
-        a.transform.localScale = new Vector3(d, d, 1f);   // circle 精灵直径=1 单位
-        a.SetActive(false);
+        ConfigLine(chainLine, chainColor, 0.09f, 5);
+        ConfigLine(aimLine, aimColor, 0.07f, 6);
+        ConfigLine(trajLine, new Color(aimColor.r, aimColor.g, aimColor.b, 0.55f), 0.05f, 6);
+        if (anchorRenderer != null)
+        {
+            anchorRenderer.color = anchorColor;
+            anchorRenderer.gameObject.SetActive(false);
+        }
 
         CollectObstacles();
-        if (spawnDemoObstacles) SpawnDemo();
+    }
+
+    void ConfigLine(LineRenderer lr, Color color, float width, int order)
+    {
+        if (lr == null) return;
+        lr.useWorldSpace = true;
+        lr.widthMultiplier = width;
+        lr.numCapVertices = 4;
+        lr.numCornerVertices = 2;
+        lr.startColor = lr.endColor = color;
+        lr.sortingOrder = order;
+        lr.positionCount = 0;
     }
 
     void CollectObstacles()
@@ -114,38 +118,6 @@ public class AnchorChain : MonoBehaviour
         }
     }
 
-    void SpawnDemo()
-    {
-        bool hasCut = false, hasLaunch = false;
-        foreach (var o in _obs)
-        {
-            if (o.kind == ChainObstacle.Kind.Cutter) hasCut = true;
-            if (o.kind == ChainObstacle.Kind.Launcher) hasLaunch = true;
-        }
-        if (!hasCut)
-            CreateObstacle("Cutter_Demo", new Vector2(0.5f, -0.6f), new Vector2(0.4f, 3.2f),
-                           ChainObstacle.Kind.Cutter, Vector2.up, new Color(0.88f, 0.31f, 0.31f));
-        if (!hasLaunch)
-            CreateObstacle("Launcher_Demo", new Vector2(4f, -2.2f), new Vector2(1f, 1f),
-                           ChainObstacle.Kind.Launcher, new Vector2(-0.5f, 1f), new Color(0.29f, 0.62f, 0.87f));
-        CollectObstacles();
-    }
-
-    void CreateObstacle(string name, Vector2 pos, Vector2 size, ChainObstacle.Kind kind, Vector2 dir, Color color)
-    {
-        var go = new GameObject(name);
-        go.transform.position = pos;
-        go.transform.localScale = new Vector3(size.x, size.y, 1f);
-        var sr = go.AddComponent<SpriteRenderer>();
-        sr.sprite = _squareSprite;
-        sr.color = color;
-        sr.sortingOrder = 3;
-        go.AddComponent<BoxCollider2D>();   // 自动匹配 1x1 精灵，随 scale 变成 size
-        var co = go.AddComponent<ChainObstacle>();
-        co.kind = kind;
-        co.launchDir = dir;
-    }
-
     // ================= 输入 =================
     void Update()
     {
@@ -153,7 +125,6 @@ public class AnchorChain : MonoBehaviour
         if (_cam == null) return;
         Vector2 mouse = _cam.ScreenToWorldPoint(Input.mousePosition);
 
-        // 任意非瞄准状态下，点玩家附近即可（重新）拉弹
         if (_phase != Phase.Aiming && Input.GetMouseButtonDown(0) &&
             Vector2.Distance(mouse, O) <= grabRadius)
         {
@@ -176,7 +147,7 @@ public class AnchorChain : MonoBehaviour
 
     void ReleaseAim()
     {
-        Vector2 pull = _aimStart - _aimMouse;         // 拉拽反方向
+        Vector2 pull = _aimStart - _aimMouse;
         float mag = Mathf.Min(maxPull, pull.magnitude);
         float speed = Mathf.Min(launchMaxSpeed, mag * launchSpeedPerUnit);
         if (speed < 0.5f) { _phase = Phase.Idle; return; }
@@ -226,7 +197,6 @@ public class AnchorChain : MonoBehaviour
         _vel *= Mathf.Pow(dragPerSecond, dt);
         _pos += _vel * dt;
 
-        // 链长上限：把锚夹到剩余链长的圆周上，只扣向外速度
         Vector2 last = _nodes[_nodes.Count - 1];
         float used = 0f;
         for (int i = 1; i < _nodes.Count; i++) used += Vector2.Distance(_nodes[i], _nodes[i - 1]);
@@ -241,14 +211,13 @@ public class AnchorChain : MonoBehaviour
             _maxLen = true;
         }
 
-        // 锚头碰撞
         for (int i = 0; i < _obs.Count; i++)
         {
             var o = _obs[i];
             if (o.col == null) continue;
             if (!CircleRect(_pos, anchorRadius, o.col.bounds, out Vector2 n, out float dep)) continue;
 
-            _pos += n * dep;   // 顶出障碍
+            _pos += n * dep;
             if (o.kind == ChainObstacle.Kind.Launcher)
             {
                 if (!_launched.Contains(o.col))
@@ -266,7 +235,6 @@ public class AnchorChain : MonoBehaviour
         }
     }
 
-    // 链条折点：末段与普通/弹射障碍相交则在交点插入折点（切链器不产生折点）
     void KinkChain()
     {
         Vector2 ln = _nodes[_nodes.Count - 1];
@@ -285,7 +253,6 @@ public class AnchorChain : MonoBehaviour
         if (found && Vector2.Distance(ln, bestPt) > 0.05f) _nodes.Add(bestPt);
     }
 
-    // 切链：任一链段穿过切链器 → 从该点断开，保留锚侧
     void CutChain()
     {
         for (int i = 0; i < _obs.Count; i++)
@@ -318,7 +285,6 @@ public class AnchorChain : MonoBehaviour
         if (dl >= r) { n = Vector2.zero; dep = 0f; return false; }
         if (dl < 1e-6f)
         {
-            // 圆心在盒内：沿最近的边推出
             float[] deps = { c.x - mn.x, mx.x - c.x, c.y - mn.y, mx.y - c.y };
             Vector2[] ns = { Vector2.left, Vector2.right, Vector2.down, Vector2.up };
             int mi = 0;
@@ -352,24 +318,24 @@ public class AnchorChain : MonoBehaviour
     // ================= 绘制 =================
     void Draw()
     {
-        // 链 + 锚头
         bool showChain = (_phase == Phase.Flying || _phase == Phase.Settled) && _nodes.Count > 0;
-        if (showChain)
+        if (chainLine != null)
         {
-            int n = _nodes.Count + 1;
-            _chainLR.positionCount = n;
-            for (int i = 0; i < _nodes.Count; i++) _chainLR.SetPosition(i, _nodes[i]);
-            _chainLR.SetPosition(n - 1, _pos);
-            _anchorSR.gameObject.SetActive(true);
-            _anchorSR.transform.position = _pos;
+            if (showChain)
+            {
+                int n = _nodes.Count + 1;
+                chainLine.positionCount = n;
+                for (int i = 0; i < _nodes.Count; i++) chainLine.SetPosition(i, _nodes[i]);
+                chainLine.SetPosition(n - 1, _pos);
+            }
+            else chainLine.positionCount = 0;
         }
-        else
+        if (anchorRenderer != null)
         {
-            _chainLR.positionCount = 0;
-            _anchorSR.gameObject.SetActive(false);
+            anchorRenderer.gameObject.SetActive(showChain);
+            if (showChain) anchorRenderer.transform.position = _pos;
         }
 
-        // 瞄准：预测弹道 + 方向箭头
         if (_phase == Phase.Aiming)
         {
             Vector2 pull = _aimStart - _aimMouse;
@@ -381,14 +347,15 @@ public class AnchorChain : MonoBehaviour
         }
         else
         {
-            _aimLR.positionCount = 0;
-            _trajLR.positionCount = 0;
+            if (aimLine != null) aimLine.positionCount = 0;
+            if (trajLine != null) trajLine.positionCount = 0;
         }
     }
 
     void DrawTrajectory(Vector2 dir, float speed)
     {
-        if (dir == Vector2.zero) { _trajLR.positionCount = 0; return; }
+        if (trajLine == null) return;
+        if (dir == Vector2.zero) { trajLine.positionCount = 0; return; }
         var pts = new List<Vector3>();
         Vector2 p = O, v = dir * speed;
         pts.Add(p);
@@ -406,23 +373,24 @@ public class AnchorChain : MonoBehaviour
             if (hit) break;
             pts.Add(p);
         }
-        _trajLR.positionCount = pts.Count;
-        _trajLR.SetPositions(pts.ToArray());
+        trajLine.positionCount = pts.Count;
+        trajLine.SetPositions(pts.ToArray());
     }
 
     void DrawAimArrow(Vector2 dir, float ratio)
     {
-        if (dir == Vector2.zero) { _aimLR.positionCount = 0; return; }
+        if (aimLine == null) return;
+        if (dir == Vector2.zero) { aimLine.positionCount = 0; return; }
         float len = 0.6f + ratio * 2.2f;
         Vector2 tip = O + dir * len;
         Vector2 back = tip - dir * 0.35f;
         Vector2 perp = new Vector2(-dir.y, dir.x) * 0.22f;
-        _aimLR.positionCount = 5;
-        _aimLR.SetPosition(0, O);
-        _aimLR.SetPosition(1, tip);
-        _aimLR.SetPosition(2, back + perp);
-        _aimLR.SetPosition(3, tip);
-        _aimLR.SetPosition(4, back - perp);
+        aimLine.positionCount = 5;
+        aimLine.SetPosition(0, O);
+        aimLine.SetPosition(1, tip);
+        aimLine.SetPosition(2, back + perp);
+        aimLine.SetPosition(3, tip);
+        aimLine.SetPosition(4, back - perp);
     }
 
     void OnGUI()
@@ -441,46 +409,5 @@ public class AnchorChain : MonoBehaviour
         GUI.color = Color.white;
         GUI.Label(new Rect(x, y - 20, 120, 20), "力度 " + Mathf.RoundToInt(ratio * 100) + "%");
         GUI.color = prev;
-    }
-
-    // ================= 工具 =================
-    LineRenderer MakeLine(string name, Color color, float width, int order)
-    {
-        var go = new GameObject(name);
-        go.transform.SetParent(transform, false);
-        var lr = go.AddComponent<LineRenderer>();
-        lr.useWorldSpace = true;
-        lr.widthMultiplier = width;
-        lr.numCapVertices = 4;
-        lr.numCornerVertices = 2;
-        lr.material = new Material(Shader.Find("Sprites/Default"));
-        lr.startColor = lr.endColor = color;
-        lr.sortingOrder = order;
-        lr.positionCount = 0;
-        return lr;
-    }
-
-    static Sprite MakeSquareSprite()
-    {
-        var t = new Texture2D(4, 4);
-        var px = new Color[16];
-        for (int i = 0; i < 16; i++) px[i] = Color.white;
-        t.SetPixels(px); t.Apply();
-        return Sprite.Create(t, new Rect(0, 0, 4, 4), new Vector2(0.5f, 0.5f), 4f);   // 1 单位
-    }
-
-    static Sprite MakeCircleSprite(int size)
-    {
-        var t = new Texture2D(size, size);
-        float r = size * 0.5f;
-        for (int y = 0; y < size; y++)
-            for (int x = 0; x < size; x++)
-            {
-                float d = Mathf.Sqrt((x + 0.5f - r) * (x + 0.5f - r) + (y + 0.5f - r) * (y + 0.5f - r));
-                float a = Mathf.Clamp01(r - d);
-                t.SetPixel(x, y, new Color(1, 1, 1, a));
-            }
-        t.Apply();
-        return Sprite.Create(t, new Rect(0, 0, size, size), new Vector2(0.5f, 0.5f), size);   // 直径 1 单位
     }
 }

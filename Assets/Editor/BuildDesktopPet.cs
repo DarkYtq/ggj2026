@@ -14,7 +14,9 @@ using Debug = UnityEngine.Debug;
 /// </summary>
 public static class BuildDesktopPet
 {
-    private const string ScenePath = "Assets/Scenes/CatWidget.unity";
+    private const string ScenePath = "Assets/Scenes/CatWidget.unity";      // 开机场景（桌面宠物）
+    private const string LevelScene = "Assets/Scenes/SampleScene.unity";   // 双击进入的关卡
+    private static readonly string[] Scenes = { ScenePath, LevelScene };
     private const string OutRoot = "Builds";
 
     [MenuItem("Build/Desktop Pet - Windows x64")]
@@ -144,9 +146,12 @@ public static class BuildDesktopPet
     private static void EnsureSceneInBuild()
     {
         var scenes = new System.Collections.Generic.List<EditorBuildSettingsScene>(EditorBuildSettings.scenes);
-        bool has = scenes.Exists(s => s.path == ScenePath);
-        if (!has)
-            scenes.Insert(0, new EditorBuildSettingsScene(ScenePath, true));
+        // SampleScene 先确保在列表里（在后）
+        if (!scenes.Exists(s => s.path == LevelScene))
+            scenes.Add(new EditorBuildSettingsScene(LevelScene, true));
+        // CatWidget 必须是第 0 个（开机进桌面宠物）
+        scenes.RemoveAll(s => s.path == ScenePath);
+        scenes.Insert(0, new EditorBuildSettingsScene(ScenePath, true));
         EditorBuildSettings.scenes = scenes.ToArray();
     }
 
@@ -156,7 +161,7 @@ public static class BuildDesktopPet
 
         var opts = new BuildPlayerOptions
         {
-            scenes = new[] { ScenePath },
+            scenes = Scenes,
             locationPathName = outputPath,
             target = target,
             targetGroup = BuildTargetGroup.Standalone,
