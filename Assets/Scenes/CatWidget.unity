@@ -1898,7 +1898,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   letterIntervalSeconds: 10
   maxLetters: 5
-  levelSceneName: SampleScene
+  levelSceneName: Level 1
   fadeTime: 0.5
   doubleClickTime: 0.25
   catAnimator: {fileID: 250007}
