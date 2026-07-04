@@ -229,6 +229,15 @@ public class AnchorChain : MonoBehaviour
 
     void Substep(float dt)
     {
+        // 0. 已钩住目标：把锚头钉在目标上、速度归零，跳过后续物理
+        //    （目标被钩住后自身也停止移动，这样锚头保持静止，胜利倒计时才能累积）
+        if (_target != null && _target.IsHooked)
+        {
+            _pos = _target.Position;
+            _vel = Vector2.zero;
+            return;
+        }
+
         // 1. 重力 + 空气阻力
         _vel.y -= gravity * dt;
         _vel *= Mathf.Pow(dragPerSecond, dt);

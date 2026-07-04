@@ -54,11 +54,7 @@ public class LevelManager : MonoBehaviour
     {
         _transitioning = true;
 
-        // 1. 强制重置锚链
-        if (anchorChain != null)
-            anchorChain.ForceReset();
-
-        // 2. 当前关缩小消失
+        // 2. 当前关缩小消失（锚链的重置放到激活下一关之后统一做，见第6步）
         GameObject cur = levels[_currentIndex];
         if (cur != null)
             yield return StartCoroutine(ShrinkRoutine(cur));
@@ -151,17 +147,10 @@ public class LevelManager : MonoBehaviour
     }
 
     // ── 工具 ──────────────────────────────────────────────────
+    // 只操作关卡根节点：子物体跟随父级一起缩放，避免逐级相乘导致的“平方缩放”。
     List<Transform> GetAll(GameObject root)
     {
-        var list = new List<Transform>();
-        Collect(root.transform, list);
-        return list;
-    }
-
-    void Collect(Transform t, List<Transform> list)
-    {
-        list.Add(t);
-        foreach (Transform c in t) Collect(c, list);
+        return new List<Transform> { root.transform };
     }
 
     void RecordScales(GameObject root)
