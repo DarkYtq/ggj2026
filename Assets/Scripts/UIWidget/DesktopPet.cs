@@ -18,6 +18,8 @@ public class DesktopPet : MonoBehaviour
     public GraphicRaycaster raycaster;
     [Tooltip("窗口置顶")]
     public bool alwaysOnTop = true;
+    [Tooltip("桌宠管理器：在“别处”点击鼠标时，通知它播放小猫 touch 动画（留空自动查找）")]
+    public CatWidgetManager petManager;
 
     /// <summary>拖拽进行中标志（由 CatDragHandler 设置）。拖拽期间不切换穿透。</summary>
     public static bool DragActive;
@@ -26,6 +28,7 @@ public class DesktopPet : MonoBehaviour
     private PointerEventData _ped;
     private readonly List<RaycastResult> _results = new List<RaycastResult>();
     private bool _clickThrough = true;   // 初始穿透
+    private bool _prevMouseDown;         // 上一帧全局左键状态，用于检测“按下”的上升沿
 
     void Start()
     {
@@ -41,6 +44,9 @@ public class DesktopPet : MonoBehaviour
 
         _es = EventSystem.current;
         _ped = new PointerEventData(_es);
+
+        if (petManager == null) petManager = FindObjectOfType<CatWidgetManager>();
+        _prevMouseDown = TransparentWindow.IsPrimaryMouseDown();   // 避免启动瞬间误触发
 
 #if !UNITY_EDITOR
         StartCoroutine(SetupWindow());
@@ -71,6 +77,20 @@ public class DesktopPet : MonoBehaviour
         if (raycaster == null) return;
         if (_es == null) { _es = EventSystem.current; if (_es == null) return; }
         if (_ped == null) _ped = new PointerEventData(_es);
+
+        // —— 全局鼠标点击：在“别处”（不在小猫/本组件可交互区域）按下左键时，播放小猫 touch 动画 ——
+        // 用全局左键状态检测“按下”的上升沿；点在小猫/信箱等可交互 UI 上则不触发（点猫只冒爱心）。
+        bool mouseDown = TransparentWindow.IsPrimaryMouseDown();
+        if (mouseDown && !_prevMouseDown && !DragActive)
+        {
+            bool overSelf;
+            if (!_clickThrough)
+                overSelf = IsOverInteractive(Input.mousePosition);   // 窗口可交互：用引擎鼠标
+            else
+                overSelf = TransparentWindow.TryGetCursor(out Vector2 c) && IsOverInteractive(c);  // 穿透态：用全局光标
+            if (!overSelf && petManager != null) petManager.PlayTouch();
+        }
+        _prevMouseDown = mouseDown;
 
         // 拖拽/按住期间绝不切换穿透，否则拖拽中途翻转会打断拖拽、让 EventSystem 卡死。
         // DragActive 来自 Unity 拖拽事件（可靠，不依赖原生）；再叠加系统级按键做兜底。

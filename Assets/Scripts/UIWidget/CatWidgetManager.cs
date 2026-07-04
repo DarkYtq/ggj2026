@@ -25,6 +25,10 @@ public class CatWidgetManager : MonoBehaviour
 
     [Header("交互")]
     public float doubleClickTime = 0.25f;
+    [Tooltip("小猫身上的 Animator（留空则自动从 cat 上获取）")]
+    public Animator catAnimator;
+    [Tooltip("单击小猫时触发的 Animator Trigger 名")]
+    public string touchTrigger = "touch";
 
     [Header("信件文本池（数量建议 ≥ 上限 n，保证 n 封内不重复）")]
     [TextArea]
@@ -143,6 +147,9 @@ public class CatWidgetManager : MonoBehaviour
             catClick.onSingle = OnCatSingleClick;
             catClick.onDouble = OnCatDoubleClick;
         }
+
+        if (catAnimator == null && cat != null)
+            catAnimator = cat.GetComponent<Animator>();
     }
 
     // ======================= 交互逻辑 =======================
@@ -150,6 +157,14 @@ public class CatWidgetManager : MonoBehaviour
     void OnCatSingleClick()
     {
         for (int i = 0; i < 3; i++) SpawnHeart();
+    }
+
+    /// <summary>在“别处”（非小猫/非本组件 UI）点击鼠标时，播放小猫的 touch 反应动画。由 DesktopPet 调用。</summary>
+    public void PlayTouch()
+    {
+        if (_inLevel) return;
+        if (catAnimator != null && !string.IsNullOrEmpty(touchTrigger))
+            catAnimator.SetTrigger(touchTrigger);
     }
 
     void OnCatDoubleClick()
