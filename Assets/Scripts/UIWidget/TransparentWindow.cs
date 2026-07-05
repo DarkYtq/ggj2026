@@ -4,7 +4,10 @@ using UnityEngine;
 
 /// <summary>
 /// 把独立运行的程序窗口变成“透明、无边框、置顶、可切换点击穿透”的桌面宠物窗口。
-/// Windows：直接用 user32/dwmapi（纯 DWM 逐像素 alpha，不用分层窗口，避免 flip-model 黑屏）。
+/// Windows：user32/dwmapi 的经典 DWM 玻璃方案（DwmExtendFrameIntoClientArea 逐像素 alpha）。
+///   注意：此方案要求【关闭】DXGI flip-model 交换链（Player Settings / ProjectSettings
+///   useFlipModelSwapchain=0），否则背景会渲染成黑色；同时需 preserveFramebufferAlpha=1。
+///   不用 WS_EX_LAYERED（与 GPU 交换链配合易黑屏）。
 /// macOS：调用原生插件 TransparentWindowMac（见 Assets/Plugins/macOS/TransparentWindowMac.mm）。
 /// 编辑器内所有方法为空操作，保持 Play 模式正常。
 /// </summary>

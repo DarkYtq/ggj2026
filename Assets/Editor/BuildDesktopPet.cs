@@ -180,16 +180,18 @@ public static class BuildDesktopPet
         // （macOS 走原生插件独立合成，不依赖此项，所以 Mac 一直是透明的。）
         PlayerSettings.preserveFramebufferAlpha = true;
 
-        // 关键：图形 API。Windows 透明依赖 D3D11 + flip-model 交换链；macOS 用 Metal。
+        // 关键：图形 API。Windows 用 D3D11；macOS 用 Metal。
         PlayerSettings.SetUseDefaultGraphicsAPIs(target, false);
         if (target == BuildTarget.StandaloneWindows64 || target == BuildTarget.StandaloneWindows)
             PlayerSettings.SetGraphicsAPIs(target, new[] { GraphicsDeviceType.Direct3D11 });
         else if (target == BuildTarget.StandaloneOSX)
             PlayerSettings.SetGraphicsAPIs(target, new[] { GraphicsDeviceType.Metal });
 
-        // flip-model 交换链（透明必需）。个别 Unity 版本未暴露该脚本 API，
-        // 已在 ProjectSettings 里置为开启，这里用反射兜底设置，设不上也不影响。
-        TrySetFlipModel();
+        // 关键（修正）：必须【关闭】DXGI flip-model 交换链。
+        // 本工程的 Windows 透明用的是 DwmExtendFrameIntoClientArea（经典 DWM 玻璃方案），
+        // 该方案在 flip-model 下不生效、会把 CatWidget 背景渲染成黑色；
+        // 切回 BitBlt(非 flip) 模型后，相机 alpha=0 的像素才会被 DWM 合成为透明。
+        TrySetFlipModel(false);
 
         // 去掉开屏 Logo（个人版可能忽略，用 try 包住避免报错中断打包）
         try { PlayerSettings.SplashScreen.show = false; PlayerSettings.SplashScreen.showUnityLogo = false; }
@@ -200,15 +202,15 @@ public static class BuildDesktopPet
         AssetDatabase.SaveAssets();
     }
 
-    private static void TrySetFlipModel()
+    private static void TrySetFlipModel(bool enable)
     {
         try
         {
             var p = typeof(PlayerSettings).GetProperty("useFlipModelSwapchain",
                 System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Static);
-            if (p != null && p.CanWrite) p.SetValue(null, true, null);
+            if (p != null && p.CanWrite) p.SetValue(null, enable, null);
         }
-        catch { /* 忽略：ProjectSettings 里已开启 */ }
+        catch { /* 忽略：ProjectSettings 里已按需设置 */ }
     }
 
     private static void EnsureSceneInBuild()
