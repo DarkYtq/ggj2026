@@ -145,7 +145,8 @@ public class AnchorChain : MonoBehaviour
     // ================= 输入 =================
     void Update()
     {
-        if (Input.GetKeyDown(KeyCode.Escape)) { Application.Quit(); return; }   // 应急退出
+        // 注意：关卡里按 Esc 的行为是「返回桌宠场景 CatWidget」，由全局 LevelEscReturn 处理，
+        // 这里不再拦截 Esc 退出程序（否则会抢先关掉程序，导致 Esc 无法返回大厅）。
 
         if (_cam == null) _cam = Camera.main;
         if (_cam == null) return;
