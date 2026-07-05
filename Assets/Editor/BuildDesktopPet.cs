@@ -15,20 +15,30 @@ using Debug = UnityEngine.Debug;
 public static class BuildDesktopPet
 {
     private const string ScenePath = "Assets/Scenes/CatWidget.unity";      // 开机场景（桌面宠物）
-    // 双击进入后的关卡场景，顺序即过关顺序（Win 时按 build 序号 +1 推进）
+    // 双击进入后的关卡场景，顺序即过关顺序（按 build 序号 +1 推进）——共 10 关
     private static readonly string[] LevelScenes =
     {
         "Assets/Scenes/Level 1.unity",
         "Assets/Scenes/Level 2.unity",
         "Assets/Scenes/Level 3.unity",
+        "Assets/Scenes/Level 4.unity",
+        "Assets/Scenes/Level 5.unity",
+        "Assets/Scenes/Level 6.unity",
+        "Assets/Scenes/Level 7.unity",
+        "Assets/Scenes/Level 8.unity",
+        "Assets/Scenes/Level 9.unity",
+        "Assets/Scenes/Level 10.unity",
     };
-    private static readonly string[] Scenes =
+    // 打包场景列表 = 桌宠场景 + 全部关卡（避免手动重复，直接由上面拼出）
+    private static string[] Scenes
     {
-        ScenePath,
-        "Assets/Scenes/Level 1.unity",
-        "Assets/Scenes/Level 2.unity",
-        "Assets/Scenes/Level 3.unity",
-    };
+        get
+        {
+            var list = new System.Collections.Generic.List<string> { ScenePath };
+            list.AddRange(LevelScenes);
+            return list.ToArray();
+        }
+    }
     private const string OutRoot = "Builds";
 
     private const string ProductProcess = "CatPet";   // 产物可执行名（CatPet.exe / CatPet.app）
@@ -164,6 +174,11 @@ public static class BuildDesktopPet
         PlayerSettings.defaultIsNativeResolution = true;
         PlayerSettings.captureSingleScreen = false;
         PlayerSettings.usePlayerLog = true;
+
+        // 关键：保留帧缓冲 alpha。Windows 透明（DWM 逐像素 alpha）依赖它；
+        // 若为 false，相机即使清屏 alpha=0，Unity 也会把背景写成不透明 → CatWidget 变黑底。
+        // （macOS 走原生插件独立合成，不依赖此项，所以 Mac 一直是透明的。）
+        PlayerSettings.preserveFramebufferAlpha = true;
 
         // 关键：图形 API。Windows 透明依赖 D3D11 + flip-model 交换链；macOS 用 Metal。
         PlayerSettings.SetUseDefaultGraphicsAPIs(target, false);
