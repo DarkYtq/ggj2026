@@ -17,10 +17,14 @@ PROJECT="$(cd "$(dirname "$0")" && pwd)"
 VERSION="2022.3.62f3"
 
 # 定位 Unity 可执行文件
+UNAME="$(uname -s)"
 if [[ -n "${UNITY_PATH:-}" ]]; then
   UNITY="$UNITY_PATH"
-elif [[ "$(uname)" == "Darwin" ]]; then
+elif [[ "$UNAME" == "Darwin" ]]; then
   UNITY="/Applications/Unity/Hub/Editor/${VERSION}/Unity.app/Contents/MacOS/Unity"
+elif [[ "$UNAME" == MINGW* || "$UNAME" == MSYS* || "$UNAME" == CYGWIN* ]]; then
+  # Windows（Git Bash / MSYS2）：Unity Hub 默认安装路径
+  UNITY="/c/Program Files/Unity/Hub/Editor/${VERSION}/Editor/Unity.exe"
 else
   UNITY="$HOME/Unity/Hub/Editor/${VERSION}/Editor/Unity"
 fi
@@ -41,9 +45,11 @@ esac
 
 # 先结束正在运行的旧游戏，避免覆盖 .app/.exe 时文件被占用
 echo "结束旧游戏进程 CatPet（若在运行）……"
-if [[ "$(uname)" == "Darwin" || "$(uname)" == "Linux" ]]; then
+if [[ "$UNAME" == "Darwin" || "$UNAME" == "Linux" ]]; then
   killall CatPet 2>/dev/null || true
   pkill -f "CatPet.app" 2>/dev/null || true
+elif [[ "$UNAME" == MINGW* || "$UNAME" == MSYS* || "$UNAME" == CYGWIN* ]]; then
+  taskkill //F //T //IM CatPet.exe 2>/dev/null || true
 fi
 
 mkdir -p "$PROJECT/Builds"

@@ -31,15 +31,27 @@ public static class LevelEscReturn
     /// <summary>常驻组件：每帧检测 Esc。</summary>
     private class Runner : MonoBehaviour
     {
+        // 进入关卡后，Windows 窗口是用 SWP_NOACTIVATE 显示的，可能没有键盘焦点，
+        // 此时 Input.GetKeyDown(Esc) 收不到事件 → Esc 失效。改用全局按键状态
+        // （TransparentWindow.IsEscapeDown：Windows 走 GetAsyncKeyState，不依赖焦点），
+        // 并在这里自己做“按下上升沿”检测，等价于 GetKeyDown、且跨平台可用。
+        private bool _prevEsc;
+        private bool _loading;
+
         void Update()
         {
-            if (!Input.GetKeyDown(KeyCode.Escape)) return;
+            bool esc = TransparentWindow.IsEscapeDown() || Input.GetKey(KeyCode.Escape);
+            bool pressed = esc && !_prevEsc;   // 上升沿
+            _prevEsc = esc;
+
+            if (!pressed || _loading) return;
 
             string active = SceneManager.GetActiveScene().name;
-            if (active == _homeScene) return;                 // 已在桌宠场景，不处理
+            if (active == _homeScene) { _loading = false; return; }  // 已回到桌宠场景：解锁，退出交给 DesktopPet
 
             if (Application.CanStreamedLevelBeLoaded(_homeScene))
             {
+                _loading = true;                              // 防止同一次切换里重复触发
                 Debug.Log($"[LevelEscReturn] Esc → 返回桌宠场景 {_homeScene}");
                 SceneManager.LoadScene(_homeScene);
             }
