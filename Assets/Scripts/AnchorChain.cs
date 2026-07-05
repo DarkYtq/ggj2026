@@ -227,6 +227,7 @@ public class AnchorChain : MonoBehaviour
 
     void Launch(Vector2 dir, float speed)
     {
+        AudioManager.PlayAnchorThrow();          // 甩锚破空音效
         _pos = O;
         _vel = dir * speed;
         _nodes.Clear();

@@ -16,9 +16,10 @@ public class AudioManager : MonoBehaviour
     public static AudioManager Instance { get; private set; }
 
     [Header("音频资源（留空则从 Resources/Audio/ 按名字自动加载）")]
-    public AudioClip levelBgm;      // Resources/Audio/level_bgm
-    public AudioClip catTouchSfx;   // Resources/Audio/cat_touch
-    public AudioClip levelClearSfx; // Resources/Audio/level_clear
+    public AudioClip levelBgm;       // Resources/Audio/level_bgm
+    public AudioClip catTouchSfx;    // Resources/Audio/cat_touch
+    public AudioClip levelClearSfx;  // Resources/Audio/level_clear
+    public AudioClip anchorThrowSfx; // Resources/Audio/anchor_throw
 
     [Header("音量")]
     [Range(0f, 1f)] public float musicVolume = 0.5f;
@@ -47,9 +48,10 @@ public class AudioManager : MonoBehaviour
         DontDestroyOnLoad(gameObject);
 
         // 自动加载缺省资源
-        if (levelBgm == null)      levelBgm      = Resources.Load<AudioClip>("Audio/level_bgm");
-        if (catTouchSfx == null)   catTouchSfx   = Resources.Load<AudioClip>("Audio/cat_touch");
-        if (levelClearSfx == null) levelClearSfx = Resources.Load<AudioClip>("Audio/level_clear");
+        if (levelBgm == null)       levelBgm       = Resources.Load<AudioClip>("Audio/level_bgm");
+        if (catTouchSfx == null)    catTouchSfx    = Resources.Load<AudioClip>("Audio/cat_touch");
+        if (levelClearSfx == null)  levelClearSfx  = Resources.Load<AudioClip>("Audio/level_clear");
+        if (anchorThrowSfx == null) anchorThrowSfx = Resources.Load<AudioClip>("Audio/anchor_throw");
 
         _music = gameObject.AddComponent<AudioSource>();
         _music.loop = true;
@@ -98,6 +100,7 @@ public class AudioManager : MonoBehaviour
     // ── 对外接口（静态便捷方法，任意脚本可直接调用）────────────
     public static void PlayCatTouch() { if (Instance != null) Instance.PlaySfx(Instance.catTouchSfx); }
     public static void PlayLevelClear() { if (Instance != null) Instance.PlaySfx(Instance.levelClearSfx); }
+    public static void PlayAnchorThrow() { if (Instance != null) Instance.PlaySfx(Instance.anchorThrowSfx); }
 
     public void PlaySfx(AudioClip clip)
     {
