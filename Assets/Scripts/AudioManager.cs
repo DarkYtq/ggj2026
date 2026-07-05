@@ -19,7 +19,7 @@ public class AudioManager : MonoBehaviour
     public AudioClip levelBgm;       // Resources/Audio/level_bgm
     public AudioClip catTouchSfx;    // Resources/Audio/cat_touch
     public AudioClip levelClearSfx;  // Resources/Audio/level_clear
-    public AudioClip anchorThrowSfx; // Resources/Audio/anchor_throw
+    public AudioClip anchorThrowSfx; // Resources/Audio/扔飞锚
 
     [Header("音量")]
     [Range(0f, 1f)] public float musicVolume = 0.5f;
@@ -51,7 +51,7 @@ public class AudioManager : MonoBehaviour
         if (levelBgm == null)       levelBgm       = Resources.Load<AudioClip>("Audio/level_bgm");
         if (catTouchSfx == null)    catTouchSfx    = Resources.Load<AudioClip>("Audio/cat_touch");
         if (levelClearSfx == null)  levelClearSfx  = Resources.Load<AudioClip>("Audio/level_clear");
-        if (anchorThrowSfx == null) anchorThrowSfx = Resources.Load<AudioClip>("Audio/anchor_throw");
+        if (anchorThrowSfx == null) anchorThrowSfx = Resources.Load<AudioClip>("Audio/扔飞锚");
 
         _music = gameObject.AddComponent<AudioSource>();
         _music.loop = true;
