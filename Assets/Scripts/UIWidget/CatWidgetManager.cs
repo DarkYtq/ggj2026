@@ -156,6 +156,7 @@ public class CatWidgetManager : MonoBehaviour
 
     void OnCatSingleClick()
     {
+        AudioManager.PlayCatTouch();          // 撸猫音效
         for (int i = 0; i < 3; i++) SpawnHeart();
     }
 
@@ -163,6 +164,7 @@ public class CatWidgetManager : MonoBehaviour
     public void PlayTouch()
     {
         if (_inLevel) return;
+        AudioManager.PlayCatTouch();          // 撸猫音效
         if (catAnimator != null && !string.IsNullOrEmpty(touchTrigger))
             catAnimator.SetTrigger(touchTrigger);
     }

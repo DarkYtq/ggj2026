@@ -90,6 +90,7 @@ public class VictoryManager : MonoBehaviour
     {
         if (_victoryTriggered) return;
         _victoryTriggered = true;
+        AudioManager.PlayLevelClear();          // 过关音效
         Debug.Log("[VictoryManager] 🎉 胜利！等待动画结束后切换下一关。");
         StartCoroutine(VictoryRoutine());
     }
